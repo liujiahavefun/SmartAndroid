@@ -79,6 +79,13 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnAd
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnRemoveTimer
   (JNIEnv *, jobject, jint, jint);
 
+
+/*
+ * 这个就是哥用来测试的！！！
+ */
+JNIEXPORT jstring JNICALL Java_com_smart_android_smartandroid_jni_JniManager_stringFromJNI
+  (JNIEnv* env, jobject);
+
 #ifdef __cplusplus
 }
 #endif
