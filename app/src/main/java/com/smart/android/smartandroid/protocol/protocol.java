@@ -15,11 +15,11 @@ public class protocol {
     /*
     * 设备类型
     */
-    public static final int DEVICE_WEB = 1;
-    public static final int DEVICE_ANDROID = 2;
-    public static final int DEVICE_IOS = 3;
-    public static final int DEVICE_WINDOWS = 4;
-    public static final int DEVICE_MACOS = 5;
+    public static final String DEVICE_WEB = "web";
+    public static final String DEVICE_ANDROID = "android";
+    public static final String DEVICE_IOS = "ios";
+    public static final String DEVICE_WINDOWS = "win";
+    public static final String DEVICE_MACOS = "mac";
 
     /*
     * 错误码，和服务端保持一致
