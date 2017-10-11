@@ -17,7 +17,16 @@ add_library( # Sets the name of the library.
              SHARED
 
              # Provides a relative path to your source file(s).
-             src/main/cpp/native-lib.cpp )
+             src/main/cpp/native-lib.cpp
+             src/main/cpp/smartgo.cpp
+             src/main/cpp/net_engine.cpp
+             src/main/cpp/mutex.cpp
+             src/main/cpp/mem_pool.cpp
+             src/main/cpp/jni_util.cpp
+             src/main/cpp/jni_callback.cpp
+             src/main/cpp/io_engine.cpp
+             src/main/cpp/conn_mgr.cpp
+             src/main/cpp/conn.cpp)
 
 # Searches for a specified prebuilt library and stores the path as a
 # variable. Because CMake includes system libraries in the search path by
