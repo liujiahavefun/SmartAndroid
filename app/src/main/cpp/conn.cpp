@@ -222,8 +222,9 @@ int CConn::_send(char* data, size_t len)
     }
 
     sockaddr_in* pAddr = NULL;
-    if ( SOCK_DGRAM == m_sockType )
+    if ( SOCK_DGRAM == m_sockType ) {
         pAddr = &m_remoteAddr;
+    }
 
     ret = m_output.write(m_sockfd, data, len, pAddr, m_sockType);
     //if means that socket can't send more data just now(maybe block),notify select to tell us when to send another data still in buffer

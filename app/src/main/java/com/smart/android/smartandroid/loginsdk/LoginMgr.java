@@ -235,7 +235,7 @@ public class LoginMgr implements ProtoHandler{
             send(protocol.PLoginByUid_uri, loginByToken.toByteArray());
         }
 
-        //TODO: log here, invalid log on information
+        //TODO: log and notify here, empty login information
         return;
     }
 

@@ -140,11 +140,12 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSe
 {
     jbyte* jbyte_arr = (jbyte*)env->GetByteArrayElements(data_arr, 0);
     char* data = (char*)jbyte_arr;
-    data[len - 1] = 0;
+    //data[len - 1] = 0;
 
     NetEngine::Packet* pk = NetEngine::PacketAlloc(data, len);
-    //NetEngine::ConnSend(conn_id, pk);
+    NetEngine::ConnSend(conn_id, pk);
 
+    /*
     NetEngine::CNetEventConnState evt;
     evt.EvtType = NetEngine::CNetEvent::EV_CONNSTATE;
     evt.ConnId = 1;
@@ -152,6 +153,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSe
     evt.state = 3;
     evt.timestamp = 123456;
     jni_callback::instance().notify_conn_event(&evt, pk);
+    */
 
     NetEngine::PacketRelease(pk);
     return 0;
