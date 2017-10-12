@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer-array name="google_colors">
+        <item>@color/chrome_circle_red</item>
+        <item>@color/chrome_circle_blue</item>
+        <item>@color/chrome_circle_yellow</item>
+        <item>@color/chrome_circle_green</item>
+    </integer-array>
+    <integer name="default_type">0</integer>
+</resources>

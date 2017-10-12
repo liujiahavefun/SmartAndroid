@@ -5,4 +5,11 @@
     <color name="colorAccent">#FF4081</color>
 
     <color name="default_background">#f3f4f5</color>
+
+    <!-- chrome动画 -->
+    <color name="chrome_circle_red">#FFC93437</color>
+    <color name="chrome_circle_blue">#FF375BF1</color>
+    <color name="chrome_circle_yellow">#FFF7D23E</color>
+    <color name="chrome_circle_green">#FF34A350</color>
+
 </resources>
