@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'com.jakewharton.butterknife'
 
 def buildTime = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone("GMT+8"))
 
@@ -81,4 +82,8 @@ dependencies {
     compile 'com.squareup.okhttp3:okhttp:3.4.2'
     compile 'com.google.protobuf:protobuf-java:3.3.0'
     compile 'com.nostra13.universalimageloader:universal-image-loader:1.9.5'
+    compile 'com.anthonycr.grant:permissions:1.0'
+    compile 'com.jakewharton:butterknife:8.8.1'
+    annotationProcessor 'com.jakewharton:butterknife-compiler:8.8.1'
+    compile 'org.greenrobot:eventbus:3.0.0'
 }
