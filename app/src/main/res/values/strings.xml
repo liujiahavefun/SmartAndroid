@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">智言</string>
+
+    <string name="empyt_hint">当前数据为空</string>
+    <string name="loading_hint">正在加载</string>
+    <string name="error_hint">加载错误，请重试</string>
+    <string name="empty_default_hint">啥都没有</string>
+    <string name="empty_default_hint_ex">真的啥都没有</string>
 </resources>
