@@ -31,11 +31,13 @@ public class LoginMgr implements ProtoHandler{
     private boolean mLvsTesting = false;
 
     public LoginMgr(LoginListener listener){
-        mLoginListener = listener;
-        mLoginWorker = ProtoWorkerService.createProtoWorker();
-        mLoginProtoHandler = new LoginProtoHandler(this);
         mLoginLink = new LoginLink(this);
         mLoginStatus = LoginConstant.LOGIN_STATUS_IDLE;
+        mLoginWorker = ProtoWorkerService.createProtoWorker();
+        mLoginListener = listener;
+        mLoginProtoHandler = new LoginProtoHandler(this);
+
+        mLoginWorker.startWorker();
     }
 
     public int setEnv(int env) {

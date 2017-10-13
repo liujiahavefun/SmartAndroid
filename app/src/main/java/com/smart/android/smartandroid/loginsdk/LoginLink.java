@@ -23,7 +23,7 @@ public class LoginLink {
     }
 
     public void connect(String ip, String port){
-        ProtoLogger.Log("LoginLink.connect, ip/port=%s:%s", mTcpIP, mTcpPort);
+        ProtoLogger.Log("LoginLink.connect, ip/port=%s:%s", ip, port);
 
         mTcpIP = ip;
         mTcpPort = port;
