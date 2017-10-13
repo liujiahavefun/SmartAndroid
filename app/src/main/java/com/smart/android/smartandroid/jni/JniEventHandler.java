@@ -44,7 +44,7 @@ public final class JniEventHandler {
      * manage event handler
      */
     public static String TAG = "JNI";
-    public static ConcurrentHashMap<Integer, IEventHandler> handlers;
+    public static ConcurrentHashMap<Integer, IEventHandler> handlers = new ConcurrentHashMap<>();
 
     public static void registerHandler(int id, IEventHandler handler){
         handlers.put(id, handler);
