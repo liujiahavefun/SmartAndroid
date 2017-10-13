@@ -165,7 +165,7 @@ void IoEngine::run(void*)
 
 		if( m_readSoSet.empty() && m_writeSoSet.empty() )
 		{
-		    ::usleep(20*1000);
+		    ::usleep(100*1000);
 			continue;
 		}
 
@@ -206,11 +206,11 @@ void IoEngine::run(void*)
 				nErrorCount++;
 				if( nErrorCount >= 50 )
 				{
-				    LOGE("IoEngine::run, select failed, lasterror=", errno);
+				    LOGE("IoEngine::run, select failed, lasterror=%d", errno);
 					nErrorCount = 0;
 				}
 
-				::usleep(20*1000);
+				::usleep(100*1000);
 			}
             continue;
 		}

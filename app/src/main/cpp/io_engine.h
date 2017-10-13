@@ -13,6 +13,13 @@
 #include <mutex>
 #include <atomic>
 
+/*
+#include <netinet/in.h>
+#include <sys/select.h>
+#include <fcntl.h>
+#include <errno.h>
+*/
+
 struct TimerItem {
 	SOCKET	socket;
 	int		id;

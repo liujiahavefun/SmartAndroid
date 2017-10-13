@@ -180,15 +180,16 @@ int BlockBuf<TAllocator, MaxBlockNum>::read(SOCKET s, sockaddr_in* pAddr/*=NULL*
     }
 
     size_t nrecv = freespace() < mPos ? freespace() : mPos;  // min(mPos, freespace());
-    if (nrecv == 0)
+    if (nrecv == 0) {
         return -1;
+    }
 
     int ret = 0;
 
-    if ( SOCK_STREAM == soType )
+    if ( SOCK_STREAM == soType ) {
         ret = ::recv(s, (char*)tail(), (int)nrecv, 0);
-    else if ( SOCK_DGRAM == soType )
-    {
+    }
+    else if ( SOCK_DGRAM == soType ) {
 #ifdef _WIN32
         int addr_len = sizeof(struct sockaddr);
 #else
@@ -197,16 +198,15 @@ int BlockBuf<TAllocator, MaxBlockNum>::read(SOCKET s, sockaddr_in* pAddr/*=NULL*
         ret = ::recvfrom(s, (char*)tail(), (int)nrecv, 0, (struct sockaddr*)pAddr, &addr_len );
     }
 
-    if (ret > 0)
+    if (ret > 0) {
         m_size += ret;
-    else
-    {
+    } else {
 #ifdef _WIN32
         uint32_t uLastErr = WSAGetLastError();
         LOGE("Blockbuf::read, read nothing, lastErrCode=%d",uLastErr);
 #else
         //if(errno != EAGAIN && errno == EINTR) //算了，都打出来吧
-        LOGE("Blockbuf::read, read nothing, lastErrCode=%d", errno);
+        LOGE("Blockbuf::read, read error, ret=%d, lastErrCode=%d", ret, errno);
 #endif
     }
     return ret;
@@ -224,10 +224,11 @@ int BlockBuf<TAllocator, MaxBlockNum>::write(SOCKET s, const char* data, size_t 
     int nsent = 0;
     if (empty()) //call send as no data cached in buffer,otherwise,socket can't send anything and we should cache the data into buffer until onSend event was given
     {
-        if ( SOCK_STREAM == soType )
+        if ( SOCK_STREAM == soType ) {
             nsent = ::send(s , data, (int)len, 0);
-        else if ( SOCK_DGRAM == soType )
+        } else if ( SOCK_DGRAM == soType ) {
             nsent = ::sendto(s, data, (int)len, 0, (struct sockaddr*)pAddr, sizeof(struct sockaddr));
+        }
     }
 
     if(nsent < 0)
@@ -251,8 +252,7 @@ int BlockBuf<TAllocator, MaxBlockNum>::write(SOCKET s, const char* data, size_t 
     }
     int restLen = len - nsent;
     if (restLen > 0) {
-        if (!append(data + nsent, restLen))
-        {
+        if (!append(data + nsent, restLen)) {
             LOGE("write, append failed!!! send data len=%d", len);
         }
     }
