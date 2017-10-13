@@ -70,18 +70,17 @@ int CConn::init(ConnAttr* attr)
 {
     if ( ConnAttr::CONN_TCP == attr->ConnType ) {
         m_sockType = SOCK_STREAM;
-    }
-    else if ( ConnAttr::CONN_UDP == attr->ConnType ) {
+    } else if ( ConnAttr::CONN_UDP == attr->ConnType ) {
         m_sockType = SOCK_DGRAM;
-    }
-    else {
+    } else {
         //unknown protocol
         return -1;
     }
 
     m_sockfd = ::socket(AF_INET, m_sockType, 0);
-    if ( INVALID_SOCKET == m_sockfd )
+    if ( INVALID_SOCKET == m_sockfd ) {
         return -1;
+    }
 
     //forbid reuse port!!! cause reuse last port may trigger onSend event(but connection closed last time)
     int on = 0;
@@ -132,14 +131,17 @@ int CConn::init(ConnAttr* attr)
 
 int CConn::connect(uint32_t ip, uint16_t port)
 {
-	LOGE("CConn::connect, connId/ip/port=%d/%d/%d", m_connId, ip, port);
     m_status = CONN_CONNECTING;
 
-	if ( INADDR_ANY != ip )
-		m_remoteAddr.sin_addr.s_addr = ip;
-	if ( 0 != port)
-		m_remoteAddr.sin_port = htons(port);
+	if ( INADDR_ANY != ip ) {
+        m_remoteAddr.sin_addr.s_addr = ip;
+    }
 
+	if ( 0 != port) {
+        m_remoteAddr.sin_port = htons(port);
+    }
+
+    LOGE("CConn::connect, connId/ip/port=%d/%d/%d", m_connId, m_remoteAddr.sin_addr.s_addr, m_remoteAddr.sin_port);
     //if (m_pFirstLayer)
     //    return m_pFirstLayer->connect(m_remoteAddr.sin_addr.s_addr, m_remoteAddr.sin_port, m_sockType);
     //else
@@ -156,13 +158,25 @@ int CConn::setNoDelay(bool flag)
 
 int CConn::_connect(uint32_t ip, uint16_t port, int sockType)
 {
-    IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_READ | FD_OP_WRITE);
+    LOGE("CConn::_connect, origin ip/port/type=%d/%d/%d", ip, port, sockType);
+
+    //是否应该等connect好了，再打开读写？
+    //IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_READ | FD_OP_WRITE, true);
 
     //ip and port couldn't be 0, coz they were initialized in connect
+
+    char* ipaddr = "192.168.1.38";//"123.56.88.196";
+    port = 9100;
+
     sockaddr_in destAddr;
+    bzero(&destAddr, sizeof(destAddr));
     destAddr.sin_family = AF_INET;
-    destAddr.sin_addr.s_addr = ip;
-    destAddr.sin_port = port;
+    //destAddr.sin_addr.s_addr = ip;
+    inet_pton(AF_INET, ipaddr, &destAddr.sin_addr);
+    //destAddr.sin_port = port;
+    destAddr.sin_port = htons(port);
+
+    LOGE("CConn::_connect, finall ip/port/type=%d/%d/%d", destAddr.sin_addr, destAddr.sin_port, sockType);
 
     notifyConnState(CNetEventConnState::CS_TRANSPTLAYER_CONNECTING);
 
@@ -173,21 +187,71 @@ int CConn::_connect(uint32_t ip, uint16_t port, int sockType)
             //if connect fail, treat EINPROGRESS as success, treat other errno as failed
             uint32_t uLastErrorNo = errno;
             if( EINPROGRESS == uLastErrorNo ) {
-                LOGE("CConn::_connect, EINPROGRESS");
-                return 0;
-            }
+                //to judge it's connected
+                /*正在处理连接*/
+                fd_set fdr, fdw;
+                struct timeval timeout;
+                FD_ZERO(&fdr);
+                FD_ZERO(&fdw);
+                FD_SET(m_sockfd, &fdr);
+                FD_SET(m_sockfd, &fdw);
+                timeout.tv_sec = 5;
+                timeout.tv_usec = 0;
+                int rc = ::select(m_sockfd + 1, &fdr, &fdw, NULL, &timeout);
+                LOGE("CConn::_connect, EINPROGRESS, select return %d", rc);
+                /*select调用失败*/
+                if (rc < 0) {
+                    LOGE("CConn::_connect, EINPROGRESS, select failed, err: %s", strerror(errno));
+                    ::close(m_sockfd);
+                    return -1;
+                }
 
-            LOGE("CConn::_connect, Error: connect failed, lastError=", uLastErrorNo);
-            this->onError();
-            return uLastErrorNo;
+                if (rc == 0) {
+                    /*连接超时*/
+                    LOGE("CConn::_connect, EINPROGRESS, select connect timeout");
+                    ::close(m_sockfd);
+                    return -1;
+                }else if (rc == 1 && FD_ISSET(m_sockfd, &fdw)) {
+                    /*[1] 当连接成功建立时，描述符变成可写,rc=1*/
+                    LOGE("CConn::_connect, EINPROGRESS, connect success");
+                    //return 0;
+                }else if (rc == 2) {
+                    /*[2] 当连接建立遇到错误时，描述符变为即可读，也可写，rc=2 遇到这种情况，可调用getsockopt函数*/
+                    int so_error;
+                    socklen_t len = sizeof(so_error);
+                    if (getsockopt(m_sockfd, SOL_SOCKET, SO_ERROR, &so_error, &len) == -1) {
+                        LOGE("CConn::_connect, EINPROGRESS, getsockopt(SO_ERROR): %s", strerror(errno));
+                        ::close(m_sockfd);
+                        return -1;
+                    }
+
+                    if (so_error) {
+                        errno = so_error;
+                        LOGE("CConn::_connect, EINPROGRESS, connect error:%s", strerror(errno));
+                        ::close(m_sockfd);
+                        return -1;
+                    }else {
+                        LOGE("CConn::_connect, EINPROGRESS, but connected");
+                        //return 0;
+                    }
+                }else {
+                    LOGE("CConn::_connect, EINPROGRESS, but NOT connected, rc: %d", rc);
+                    return -1;
+                }
+            }else {
+                LOGE("CConn::_connect, Error: connect failed, lastError=%u", uLastErrorNo);
+                this->onError();
+                return uLastErrorNo;
+            }
         }
-        return 0;
+        //return 0;
     }
     else if ( SOCK_DGRAM == sockType )
     {
         int iError = bind(m_sockfd, (sockaddr*)&m_localAddr, sizeof(m_localAddr));
-        if ( iError < 0 )
+        if ( iError < 0 ) {
             return -1;
+        }
 
         // 8MB buffer is enough
         int sock_bufsize = 8*1024*1024;
@@ -197,10 +261,15 @@ int CConn::_connect(uint32_t ip, uint16_t port, int sockType)
         if (setsockopt(m_sockfd, SOL_SOCKET, SO_SNDBUF, (char*)&sock_bufsize, sizeof(int)) != 0) {
             return -1;
         }
-        return 0;
+        //return 0;
+    }else {
+        LOGE("CConn::_connect, Error: invalid type, only support TCP/UDP");
+        return -1;
     }
 
-    return -1;
+    LOGE("CConn::_connect, connect success!!!");
+    IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_READ | FD_OP_WRITE, true);
+    return 0;
 }
 
 int CConn::send(char* data, size_t len)
@@ -292,8 +361,9 @@ int CConn::onRecv()
 
     sockaddr_in  srvAddr;
     sockaddr_in* pAddr = NULL;
-    if ( SOCK_DGRAM == m_sockType )
+    if ( SOCK_DGRAM == m_sockType ) {
         pAddr = &srvAddr;
+    }
 
     int nrecv = m_input.read(m_sockfd, pAddr, m_sockType); //in UDP,pAddr point to where data from, maybe we should compare it with m_remoteAddr.anyway, let it go now
     if ( nrecv > 0)
@@ -315,7 +385,7 @@ int CConn::onRecv()
     else
     {
         //connection maybe broken!
-        LOGE("call recv(recvfrom) but read nothing, connection maybe reset by peer, connId/sockType/nrecv=", m_connId, m_sockType, nrecv);
+        LOGE("call recv(recvfrom) but read nothing, connection maybe reset by peer, connId/sockType/nrecv=%d/%d/%d", m_connId, m_sockType, nrecv);
         return onError();
     }
     return -1;
@@ -533,7 +603,7 @@ uint32_t CConn::peekLength(const void* d)
 
 int CConn::onConnected()
 {
-	LOGE("CConn::onConnected, m_connId/socket/status=", m_connId, m_sockfd, m_status);
+	LOGE("CConn::onConnected, m_connId/socket/status=%d/%d/%d", m_connId, m_sockfd, m_status);
 
     IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_WRITE, false); //unregister onWrite event from select (or onSend event will be given every time!)
 
@@ -556,7 +626,7 @@ int CConn::_onConnected()
 
 int CConn::onError()
 {
-	LOGE("CConn::onError, m_connId/socket/status=", m_connId, m_sockfd, m_status);
+	LOGE("CConn::onError, m_connId/socket/status=%d/%d/%d", m_connId, m_sockfd, m_status);
 
     IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_CLR);
     //if (m_pLastLayer)
