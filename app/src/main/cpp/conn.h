@@ -79,7 +79,7 @@ public:
     int     close();
     int     addTimer(int id, int interval);
 	int     removeTimer(int id);
-    int     _connect(uint32_t ip, uint16_t port, int sockType);
+    int     _connect(int ip, short port, int sockType);
     int     _send(char* data, size_t len);
     int     _close();
 	int		setNoDelay(bool flag);
