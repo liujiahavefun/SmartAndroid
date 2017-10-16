@@ -2,11 +2,11 @@
 // Created by liujia on 16/8/27.
 //
 
-#include "jni_callback.h"
 #include <jni.h>
 #include <string>
 #include "log.h"
 #include "jni_util.h"
+#include "jni_callback.h"
 
 using namespace NetEngine;
 
@@ -138,7 +138,7 @@ int jni_callback::notify_conn_event(CNetEventConnState* state, NetEngine::Packet
     }
 
     jobject obj_event = env->NewObject(clazz_event, method_id_cons_event);
-    if (method_id_cons_event == NULL) {
+    if (obj_event == NULL) {
         printf("failed to new object");
         return 6;
     }
