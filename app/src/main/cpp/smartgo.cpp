@@ -53,6 +53,8 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_NetEng
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCreate
   (JNIEnv* env, jobject obj, jobject attr)
 {
+    LOGE("ConnCreate");
+
     //liujia: attr这个object要不是com/smart/android/smartandroid/jni/ConnAttrWrapper，就把调用者拉出去砍了
     //jclass clazz =env->FindClass("com/smart/android/smartandroid/jni/ConnAttrWrapper");
     jclass clazz = env->GetObjectClass(attr);
@@ -100,9 +102,9 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCr
 
     NetEngine::ConnAttr connAttr;
     connAttr.ConnType = conn_type;
-    connAttr.RemoteIP = inet_addr(remote_ip.c_str());
+    inet_pton(AF_INET, remote_ip.c_str(), &connAttr.RemoteIP);
     connAttr.RemotePort = htons(string_util::str_to_num<uint16_t>(remote_port.c_str()));
-    connAttr.LocalIP = inet_addr(local_ip.c_str());
+    inet_pton(AF_INET, local_ip.c_str(), &connAttr.LocalIP);
     connAttr.LocalPort = htons(string_util::str_to_num<uint16_t>(local_port.c_str()));
 
     return NetEngine::ConnCreate(&connAttr);
@@ -116,6 +118,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCr
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnConnect
   (JNIEnv *, jobject, jint conn_id, jint ip, jshort port)
 {
+    LOGE("ConnConnect");
     return NetEngine::ConnConnect(conn_id, ip, port);
 }
 
@@ -127,6 +130,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCo
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnClose
   (JNIEnv *, jobject, jint conn_id)
 {
+    LOGE("ConnClose");
     return NetEngine::ConnClose(conn_id);
 }
 
@@ -138,6 +142,8 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCl
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSend
   (JNIEnv * env, jobject obj, jint conn_id, jbyteArray data_arr, jint len)
 {
+    LOGD("ConnSend");
+
     jbyte* jbyte_arr = (jbyte*)env->GetByteArrayElements(data_arr, 0);
     char* data = (char*)jbyte_arr;
     //data[len - 1] = 0;
@@ -167,6 +173,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSe
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSetNoDelay
   (JNIEnv *, jobject, jint conn_id, jboolean flag)
 {
+    LOGE("ConnSetNoDelay");
     return NetEngine::ConnSetNoDelay(conn_id, flag);
 }
 
@@ -178,6 +185,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSe
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnAddTimer
   (JNIEnv *, jobject, jint conn_id, jint timer_id, jint interval)
 {
+    LOGE("ConnAddTimer");
     return NetEngine::ConnAddTimer(conn_id, timer_id, interval);
 }
 
@@ -189,14 +197,20 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnAd
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnRemoveTimer
   (JNIEnv *, jobject, jint conn_id, jint timer_id)
 {
+    LOGE("ConnRemoveTimer");
     return NetEngine::ConnRemoveTimer(conn_id, timer_id);
 }
 
-
+/*
+ * Class:     com_smart_android_smartandroid_jni_JniManager
+ * Method:    stringFromJNI
+ * Signature: ()I
+ */
 JNIEXPORT jstring JNICALL Java_com_smart_android_smartandroid_jni_JniManager_stringFromJNI(
         JNIEnv* env,
         jobject /* this */)
 {
+    LOGE("stringFromJNI");
 #if defined(__arm__)
     #if defined(__ARM_ARCH_7A__)
     #if defined(__ARM_NEON__)
