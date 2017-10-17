@@ -74,7 +74,7 @@ struct Allocator_new_delete
     typedef Allocator_malloc_free<128* 1024> Allocator_Block_128k;
 #endif
 
-template<typename TAllocator = Allocator_Block_4k, unsigned MaxBlockNum = 2>
+template<typename TAllocator = Allocator_Block_4k, unsigned MaxBlockNum = 4>
 class BlockBuf
 {
     enum{
@@ -85,7 +85,9 @@ class BlockBuf
     };
 public:
     BlockBuf(): m_size(0), m_blockNum(0), m_data(NULL){}
-    virtual ~BlockBuf(){ this->free(); }
+    virtual ~BlockBuf(){
+        this->free();
+    }
 
 public:
     inline char*    data()      { return m_data; }
@@ -206,7 +208,7 @@ int BlockBuf<TAllocator, MaxBlockNum>::read(SOCKET s, sockaddr_in* pAddr/*=NULL*
         LOGE("Blockbuf::read, read nothing, lastErrCode=%d",uLastErr);
 #else
         //if(errno != EAGAIN && errno == EINTR) //算了，都打出来吧
-        LOGE("Blockbuf::read, read error, ret=%d, lastErrCode=%d", ret, errno);
+        LOGE("Blockbuf::read, read error, ret=%d, err=%s", ret, strerror(errno));
 #endif
     }
     return ret;
