@@ -37,7 +37,7 @@ L类名 object   例如 Lcom/cloudywood/ip/jni/ConnEventWrapper
    CallByteMethod                   CallStaticVoidMethod
 */
 
-static const char* JAVA_CALLBACK_CLASS = "com/smart/android/smartandroid/jni/JniEventHandler";
+const char* JAVA_CALLBACK_CLASS = "com/smart/android/smartandroid/jni/JniEventHandler";
 
 jni_callback& jni_callback::instance()
 {
@@ -62,11 +62,13 @@ int jni_callback::log(int level, const char* format, ...)
 {
     // get JNIEnv
     JNIEnv* env = getEnv();
-    if(env == NULL)
+    if(env == NULL) {
         return 1;
+    }
 
     // find class
     jclass clazz = env->FindClass(JAVA_CALLBACK_CLASS);
+    //jclass clazz = findClass(env, JAVA_CALLBACK_CLASS);
     if (clazz == NULL) {
         printf("failed to find class %s", JAVA_CALLBACK_CLASS);
         return 2;
@@ -114,6 +116,7 @@ int jni_callback::notify_conn_event(CNetEventConnState* state, NetEngine::Packet
 
     // find class
     jclass clazz = env->FindClass(JAVA_CALLBACK_CLASS);
+    //jclass clazz = findClass(env, JAVA_CALLBACK_CLASS);
     if (clazz == NULL) {
         printf("failed to find class %s", JAVA_CALLBACK_CLASS);
         return 2;

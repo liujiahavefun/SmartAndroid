@@ -8,9 +8,12 @@
 #include "jni_callback.h"
 
 JavaVM* g_JavaVM = NULL;
+static jobject gClassLoader;
+static jmethodID gFindClassMethod;
 
 static pthread_key_t s_JniThreadKey;
 //static pthread_once_t key_once;
+
 
 static void JNI_OnThreadDestroyed(void* value)
 {
@@ -28,10 +31,8 @@ JNIEnv* getEnv()
         return env;
     }
 
-    if (g_JavaVM->GetEnv((void **)&env, JNI_VERSION_1_6) == JNI_OK)
+    if (g_JavaVM->GetEnv((void **)&env, JNI_VERSION_1_6) != JNI_OK)
     {
-        //liujia: 我更新NDK版本后，AttachCurrentThread的第一个参数就变了。。。
-        //int result = g_JavaVM->AttachCurrentThread((void**)&env, NULL);
         int result = g_JavaVM->AttachCurrentThread(&env, NULL);
         if (result != JNI_OK){
             printf("failed to attach current native thread %lu \n", pthread_self());
@@ -53,11 +54,10 @@ JNIEnv* getEnv()
     return env;
 }
 
-jint JNI_OnLoad_Impl(JavaVM* jvm, void* reserved)
-{
+jint JNI_OnLoad_Impl(JavaVM* jvm, void* reserved) {
     g_JavaVM = jvm;
     JNIEnv *env = NULL;;
-    if (g_JavaVM->GetEnv((void**)&env, JNI_VERSION_1_6) != JNI_OK) {
+    if (g_JavaVM->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return -1;
     }
 
@@ -65,7 +65,30 @@ jint JNI_OnLoad_Impl(JavaVM* jvm, void* reserved)
         __android_log_print(ANDROID_LOG_ERROR, "NATIVE", "failed initializing pthread key");
     }
 
+    //liujia: cache something....
+    if (env != nullptr) {
+        auto randomClass = env->FindClass(JAVA_CALLBACK_CLASS);
+        jclass classClass = env->GetObjectClass(randomClass);
+        auto classLoaderClass = env->FindClass("java/lang/ClassLoader");
+        auto getClassLoaderMethod = env->GetMethodID(classClass, "getClassLoader", "()Ljava/lang/ClassLoader;");
+        gClassLoader = env->NewGlobalRef(env->CallObjectMethod(randomClass, getClassLoaderMethod));
+        gFindClassMethod = env->GetMethodID(classLoaderClass, "findClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    }
+
     return JNI_VERSION_1_6;
+}
+
+jclass findClass(JNIEnv* env, const char* name) {
+    if(env == nullptr || name == NULL) {
+        return nullptr;
+    }
+
+    jclass clazz = env->FindClass(name);
+    if (clazz != nullptr) {
+        return clazz;
+    }
+
+    return static_cast<jclass>(env->CallObjectMethod(gClassLoader, gFindClassMethod, env->NewStringUTF(name)));
 }
 
 bool get_obj_int_field(JNIEnv* env, jclass clazz, jobject obj, const char* field, int& val)

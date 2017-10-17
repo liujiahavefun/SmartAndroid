@@ -7,6 +7,8 @@
 
 #include "net_engine.h"
 
+extern const char* JAVA_CALLBACK_CLASS;
+
 class jni_callback
 {
 public:
