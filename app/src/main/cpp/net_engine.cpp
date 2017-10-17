@@ -2,6 +2,8 @@
 // Created by liujia on 16/8/16.
 //
 
+
+#include <pthread.h>
 #include "net_engine.h"
 #include "mutex.h"
 #include "io_engine.h"

@@ -86,19 +86,20 @@ NETENGINE_API void PacketRelease(Packet* pkt);
 */
 struct NETENGINE_API CNetEvent
 {
-    // Event types
+    //Event types
     enum
     {
-        EV_CONNECTED = 0,
-        EV_IN = 1,
-        EV_ERROR = 2,
-        EV_ALIVE = 3,
-        EV_SENT = 4,
-        EV_NETWORKLOST = 5,
-        EV_NETWORKRESUME = 6,
-        EV_CONNSTATE = 7,
-        EV_INSTREAM = 8,
-        EV_TIMER = 9,
+        EV_UNKNOWN   = 0,
+        EV_CONNECTING = 1,          //连接中
+        EV_CONNECTED = 2,           //已连接
+        EV_CLOSED = 3,              //已关闭
+        EV_ERROR = 4,               //错误
+        EV_IN = 5,                  //收到完整数据包
+        EV_INSTREAM = 6,            //数据流
+        EV_SENT = 7,                //数据包已发送
+        EV_CONNSTATE = 8,           //连接状态，具体见下面的CNetEventConnState定义
+        EV_TIMER = 9,               //定时器
+        EV_ALIVE = 10,              //收到ping回复
     };
     int			ConnId;		// actually the value is socket id(SOCKET)
     int			EvtType;	// Event Type

@@ -28,14 +28,19 @@ public final class JniEventHandler {
     }
 
     public static void OnNetEvent(ConnEventWrapper event, byte[] data, int len) {
-        LogUtil.d(TAG, "net event: conn id[" + event.connId + "] data length[" + String.valueOf(len) + "]");
+        if(event.eventType != ConnEventWrapper.EVENT_IN) {
+            LogUtil.d(TAG, event.toString());
+        }else {
+            LogUtil.d(TAG, String.format("%s,数据包长度:%d", event.toString(), len));
+        }
+
         if(handlers.containsKey(event.connId)){
             IEventHandler handler = handlers.get(event.connId);
             if(handler != null){
                 handler.onEvent(event, data, len);
             }
         }else{
-            LogUtil.w(TAG, "conn id: " + event.connId + " with Event, not exist" );
+            //LogUtil.w(TAG, "conn id: " + event.connId + " with Event, not exist" );
             //close the conn in NetEngine???
         }
     }
