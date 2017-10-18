@@ -7,9 +7,11 @@
 #include <android/log.h>
 #include "jni_callback.h"
 
-JavaVM* g_JavaVM = NULL;
-static jobject gClassLoader;
-static jmethodID gFindClassMethod;
+JavaVM* g_JavaVM = nullptr;
+jobject g_JNICallbackObj = nullptr;
+
+//static jobject gClassLoader;
+//static jmethodID gFindClassMethod;
 
 static pthread_key_t s_JniThreadKey;
 //static pthread_once_t key_once;
@@ -66,6 +68,7 @@ jint JNI_OnLoad_Impl(JavaVM* jvm, void* reserved) {
     }
 
     //liujia: cache something....
+    /*
     if (env != nullptr) {
         auto randomClass = env->FindClass(JAVA_CALLBACK_CLASS);
         jclass classClass = env->GetObjectClass(randomClass);
@@ -74,10 +77,12 @@ jint JNI_OnLoad_Impl(JavaVM* jvm, void* reserved) {
         gClassLoader = env->NewGlobalRef(env->CallObjectMethod(randomClass, getClassLoaderMethod));
         gFindClassMethod = env->GetMethodID(classLoaderClass, "findClass", "(Ljava/lang/String;)Ljava/lang/Class;");
     }
+    */
 
     return JNI_VERSION_1_6;
 }
 
+/*
 jclass findClass(JNIEnv* env, const char* name) {
     if(env == nullptr || name == NULL) {
         return nullptr;
@@ -90,6 +95,7 @@ jclass findClass(JNIEnv* env, const char* name) {
 
     return static_cast<jclass>(env->CallObjectMethod(gClassLoader, gFindClassMethod, env->NewStringUTF(name)));
 }
+*/
 
 bool get_obj_int_field(JNIEnv* env, jclass clazz, jobject obj, const char* field, int& val)
 {
@@ -166,16 +172,6 @@ bool set_obj_string_field(JNIEnv* env, jclass clazz, jobject obj, const char* fi
     if (field_id == NULL){
         return false;
     }
-
-    /*
-    jclass strClass = env->FindClass("Ljava/lang/String;");
-    jmethodID ctorID = env->GetMethodID(strClass, "<init>", "([BLjava/lang/String;)V");
-    jbyteArray bytes = env->NewByteArray(strlen(val));
-    env->SetByteArrayRegion(bytes, 0, strlen(val), (jbyte*)val);
-    jstring encoding = env->NewStringUTF("utf-8");
-    jstring valData = (jstring)env->NewObject(strClass, ctorID, bytes, encoding);
-    env->ReleaseStringUTF(encoding);
-    */
 
     jstring jstr = env->NewStringUTF(val);
     env->SetObjectField(obj, field_id, jstr);

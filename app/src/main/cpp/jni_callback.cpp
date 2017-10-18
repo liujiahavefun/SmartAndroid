@@ -2,6 +2,20 @@
 // Created by liujia on 16/8/27.
 //
 
+/*
+ * 老夫在这里说几句
+ * 首先notify_conn_event这个函数已经注释掉了，因为这个函数有个问题，就是从java线程里从jni回调java是ok的
+ * 但在native线程里，如IOEngine线程里，FindClass就找不到类了，怀疑是JNIEnv里的classloader有问题。。。
+ * 但是我保存了全局的classloader，参考jni_util::findClass，但NewStringUTF会崩溃，不知道啥原因。。。
+ * 所以这个问题，老夫细细从头梳理，应该这样做
+ * 1）对于native线程，启动时(或者getenv时)，调用AttachCurrentThread去将JNIEnv attach到当前线程(顺便也获取了当前线程的JNIEnv，这个对象是与线程绑定的)
+ * 2）java通过jni调用native函数时，必须通过JniManager对象调用，并传递了这个对象作为第二个参数。见NetEngineStart函数
+ *    我们要做的就是保存这个对象的一个全局引用，即g_JNICallbackObj
+ * 3）回调时，显示百分百无法通过env->FindClass("com/smart/android/smartandroid/jni/JniEventHandler")找打回调类
+ *    我们这样，通过GetObjectClass，获得这个回调对象的类
+ * 4）然后拿到jclass了，就好办了，就拿各种method，再回调就好了
+ */
+
 #include <jni.h>
 #include <string>
 #include "log.h"
@@ -58,29 +72,32 @@ void jni_callback::call(const char* func_name, Args... args)
 }
 
 //liujia: TODO, 提前返回的话有资源泄露的可能，goto凑活一下可以解决
-int jni_callback::log(int level, const char* format, ...)
+void jni_callback::log(int level, const char* format, ...)
 {
-    // get JNIEnv
+    //get JNIEnv
     JNIEnv* env = getEnv();
     if(env == NULL) {
-        return 1;
+        ANDROID_LOGE("failed to get JNIEnv");
+        return;
     }
 
-    // find class
-    jclass clazz = env->FindClass(JAVA_CALLBACK_CLASS);
-    //jclass clazz = findClass(env, JAVA_CALLBACK_CLASS);
+    //find class
+    if(g_JNICallbackObj == nullptr) {
+
+    }
+    jclass clazz = env->GetObjectClass(g_JNICallbackObj);
     if (clazz == NULL) {
-        printf("failed to find class %s", JAVA_CALLBACK_CLASS);
-        return 2;
+        ANDROID_LOGE("failed to find callback class");
+        return;
     }
 
-    // get class's static method
+    //get class's static method
     //注意这个函数签名 (Ljava/lang/String;I)V 表面函数返回值V(void),两个参数Ljava/lang/String（String）， I(int)
     //注意Ljava/lang/String后面要加上";"，如果是（int，String）则写成ILjava/lang/String;
-    jmethodID method_id = env->GetStaticMethodID(clazz, "NativeLog", "(ILjava/lang/String;)V");
+    jmethodID method_id = env->GetStaticMethodID(clazz, "OnLog", "(ILjava/lang/String;)V");
     if (method_id == NULL) {
-        printf("failed to find static method [NativeLog]");
-        return 3;
+        ANDROID_LOGE("failed to find static method [NativeLog]");
+        return ;
     }
 
     char buf[1024];
@@ -98,9 +115,75 @@ int jni_callback::log(int level, const char* format, ...)
     env->DeleteLocalRef(clazz);
     env->DeleteLocalRef(jstr_arg);
 
-    return 0;
+    return;
 }
 
+void jni_callback::on_event(int conn_id, int event_id, long val)
+{
+    //get JNIEnv
+    JNIEnv* env = getEnv();
+    if(env == NULL){
+        LOGE("failed to get JNIEnv");
+        return;
+    }
+
+    //find class
+    jclass clazz = env->GetObjectClass(g_JNICallbackObj);
+    if (clazz == NULL) {
+        LOGE("failed to find callback class");
+        return;
+    }
+
+    //get method
+    jmethodID method_id = env->GetStaticMethodID(clazz, "OnEvent", "(IIJ)V");
+    if (method_id == NULL) {
+        LOGE("failed to find static method [OnEvent]");
+        return;
+    }
+
+    //call callback fucntion
+    env->CallStaticVoidMethod(clazz, method_id, conn_id, event_id, val);
+
+    //release ref
+    env->DeleteLocalRef(clazz);
+}
+
+void jni_callback::on_data(int conn_id, const char* data, int len) {
+    //get JNIEnv
+    JNIEnv* env = getEnv();
+    if(env == NULL){
+        LOGE("failed to get JNIEnv");
+        return;
+    }
+
+    //find class
+    jclass clazz = env->GetObjectClass(g_JNICallbackObj);
+    if (clazz == NULL) {
+        LOGE("failed to find callback class");
+        return;
+    }
+
+    //get method
+    jmethodID method_id = env->GetStaticMethodID(clazz, "OnData", "(I[BI)V");
+    if (method_id == NULL) {
+        LOGE("failed to find static method [OnEvent]");
+        return;
+    }
+
+    //prepare data buffer
+    jbyteArray jbarray = env->NewByteArray(len);
+    env->SetByteArrayRegion(jbarray, 0, len, (jbyte*)data);
+
+
+    //call callback fucntion
+    env->CallStaticVoidMethod(clazz, method_id, conn_id, jbarray, len);
+
+    //release ref
+    env->DeleteLocalRef(clazz);
+    env->DeleteLocalRef(jbarray);
+}
+
+/*
 int jni_callback::notify_conn_event(CNetEventConnState* state, NetEngine::Packet* pkt)
 {
     if(state == NULL){
@@ -191,3 +274,4 @@ int jni_callback::notify_conn_event(CNetEventConnState* state, NetEngine::Packet
 
     return 0;
 }
+*/

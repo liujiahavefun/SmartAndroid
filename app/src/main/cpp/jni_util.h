@@ -9,18 +9,22 @@
 #include <pthread.h>
 #include <string>
 
-// global JavaVM pointer
+//global JavaVM pointer
 extern JavaVM* g_JavaVM;
 
-// get JNIEnv in any thread context
+//global JAVA callback object
+extern jobject g_JNICallbackObj;
+
+//get JNIEnv in any thread context
 JNIEnv* getEnv();
 
-// implementation of JNI_OnLoad when our .so lib is loaded by JVM
+//implementation of JNI_OnLoad when our .so lib is loaded by JVM
 jint JNI_OnLoad_Impl(JavaVM* vm, void* reserved);
 
-// find class
-jclass findClass(JNIEnv* env, const char* name);
+//find class
+//jclass findClass(JNIEnv* env, const char* name);
 
+//get/set object field
 bool get_obj_int_field(JNIEnv* env, jclass clazz, jobject obj, const char* field, int& val);
 bool get_obj_string_field(JNIEnv* env, jclass clazz, jobject obj, const char* field, std::string& val);
 

@@ -15,11 +15,14 @@ public:
     static jni_callback& instance();
 
 public:
-    int log(int level, const char* format, ...);
-    int notify_conn_event(NetEngine::CNetEventConnState* state, NetEngine::Packet* pkt);
+    void log(int level, const char* format, ...);
+    void on_event(int conn_id, int event_id, long val);
+    void on_data(int conn_id, const char* data, int len);
 
     template<typename ... Args>
     void call(const char* name, Args... args);
+
+    //int notify_conn_event(NetEngine::CNetEventConnState* state, NetEngine::Packet* pkt);
 
 private:
     jni_callback();
