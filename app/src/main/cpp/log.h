@@ -15,9 +15,11 @@
 #include <string.h>
 
 #define   LOG_TAG    "NATIVE"
-#define   ANDROID_LOGI(FORMAT,...)  __android_log_print(ANDROID_LOG_INFO,  LOG_TAG, FORMAT, VA_ARGS__)
-#define   ANDROID_LOGE(FORMAT,...)  __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, FORMAT, VA_ARGS__)
-#define   PRINTF(FORMAT,...)          printf(FORMAT,__VA_ARGS__);
+#define ANDROID_LOGI(...)  __android_log_print(ANDROID_LOG_INFO,    LOG_TAG, __VA_ARGS__)
+#define ANDROID_LOGD(...)  __android_log_print(ANDROID_LOG_DEBUG,   LOG_TAG, __VA_ARGS__)
+#define ANDROID_LOGW(...)  __android_log_print(ANDROID_LOG_WARN,    LOG_TAG, __VA_ARGS__)
+#define ANDROID_LOGE(...)  __android_log_print(ANDROID_LOG_ERROR,   LOG_TAG, __VA_ARGS__)
+#define ANDROID_LOGF(...)  __android_log_print(ANDROID_LOG_FATAL,   LOG_TAG, __VA_ARGS__)
 
 inline std::string formatedStamp()
 {
