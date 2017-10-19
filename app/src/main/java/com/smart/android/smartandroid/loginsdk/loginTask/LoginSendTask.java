@@ -10,11 +10,13 @@ import com.smart.android.smartandroid.loginsdk.LoginMgr;
 
 public class LoginSendTask implements ProtoTaskRunnable {
     private LoginMgr mLoginMgr;
+    private int mUri;
     private byte[] mDataBuf;
     private int mDataLen;
 
-    public LoginSendTask(LoginMgr mgr, byte[] data, int len){
+    public LoginSendTask(LoginMgr mgr, int uri, byte[] data, int len){
         this.mLoginMgr = mgr;
+        this.mUri = uri;
         this.mDataBuf = data;
         this.mDataLen = len;
     }
@@ -35,6 +37,6 @@ public class LoginSendTask implements ProtoTaskRunnable {
         if(loginLink == null){
             return;
         }
-        loginLink.send(mDataBuf, mDataLen);
+        loginLink.send(mUri, mDataBuf, mDataLen);
     }
 }

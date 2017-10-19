@@ -38,7 +38,8 @@ public class SendTask implements ProtoTaskRunnable {
         }
 
         //4字节的Size，4字节的msgId
-        byte[] data = ProtoUtil.concatAll(ByteConverter.intToBytes(4+mData.length), ByteConverter.intToBytes(mUri), mData);
-        mLoginMgr.getLink().send(data, data.length);
+        //byte[] data = ProtoUtil.concatAll(ByteConverter.intToBytes(4+mData.length), ByteConverter.intToBytes(mUri), mData);
+        //mLoginMgr.getLink().send(mUri, data, data.length);
+        mLoginMgr.getLink().send(mUri, mData, mData.length);
     }
 }

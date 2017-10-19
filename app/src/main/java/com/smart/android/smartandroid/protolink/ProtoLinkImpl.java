@@ -36,6 +36,7 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
             return false;
         }
 
+        //create conn
         ConnAttrWrapper attr = new ConnAttrWrapper();
         attr.ConnType = (mLinkType == ProtoConstant.LinkType.TCP_LINK ? ConnAttrWrapper.SOCKET_TCP : ConnAttrWrapper.SOCKET_UDP);
         attr.RemoteIP = ip;
@@ -47,6 +48,10 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
             return false;
         }
 
+        //disable nagle algorithm
+        //JniManager.GetInstance().ConnSetNoDelay(mConnId, true);
+
+        //do connect
         if(JniManager.GetInstance().ConnConnect(mConnId, 0, (short)0) != 0 ){
             return false;
         }
@@ -58,12 +63,12 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
         return true;
     }
 
-    public void send(byte[] data, int len){
+    public void send(int uri, byte[] data, int len){
         if(mConnId <= 0){
             return;
         }
         mDataTotalSent += len;
-        JniManager.GetInstance().ConnSend(mConnId, data, len);
+        JniManager.GetInstance().ConnSend(uri, mConnId, data, len);
     }
 
     public void close(){

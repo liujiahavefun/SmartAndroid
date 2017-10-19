@@ -33,12 +33,12 @@ public class LoginLink {
         mLinkImpl.close();
     }
 
-    public void send(byte[] data, int len){
+    public void send(int uri, byte[] data, int len){
         if(data == null || len == 0){
             return;
         }
         if(mLinkImpl.isConnected()){
-            mLinkImpl.send(data, len);
+            mLinkImpl.send(uri, data, len);
         }
     }
 

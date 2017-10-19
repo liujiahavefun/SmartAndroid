@@ -81,8 +81,8 @@ public class LvsTestTask implements ProtoTaskRunnable {
         } else {
             //TODO: log here....  LoginTestLvsTask.run, start connecting, ip/port=%s:%d
             this.mLoginMgr.setLoginStatus(LoginConstant.LOGIN_STATUS_CONNECTING);
-            this.mLoginMgr.getLink().connect(loginHostIP, "9100");
-            //this.mLoginMgr.getLink().connect("192.168.1.38", "9100");
+            //this.mLoginMgr.getLink().connect(loginHostIP, "9100");
+            this.mLoginMgr.getLink().connect("192.168.1.38", "9100");
         }
     }
 

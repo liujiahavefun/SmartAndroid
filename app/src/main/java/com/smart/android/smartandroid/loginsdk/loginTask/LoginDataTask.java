@@ -32,10 +32,12 @@ public class LoginDataTask implements ProtoTaskRunnable {
 
     @Override
     public void run(){
+        /*
         LoginLink loginLink = this.mLoginMgr.getLink();
         if(loginLink == null){
             return;
         }
         loginLink.send(mDataBuf, mDataLen);
+        */
     }
 }

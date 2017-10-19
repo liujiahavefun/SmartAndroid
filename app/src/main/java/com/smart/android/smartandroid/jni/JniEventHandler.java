@@ -28,6 +28,10 @@ public final class JniEventHandler {
     }
 
     public static void OnNetEvent(ConnEventWrapper event, byte[] data, int len) {
+        if(event == null || (event.eventType == ConnEventWrapper.EVENT_IN && data.length == 0)) {
+            return;
+        }
+
         if(event.eventType != ConnEventWrapper.EVENT_IN) {
             LogUtil.d(TAG, event.toString());
         }else {

@@ -6,6 +6,6 @@ package com.smart.android.smartandroid.protolink;
  */
 public interface IProtoLink {
     boolean connect(String ip, String port);
-    void	send(byte[] data, int len);
+    void	send(int uri, byte[] data, int len);
     void    close();
 }

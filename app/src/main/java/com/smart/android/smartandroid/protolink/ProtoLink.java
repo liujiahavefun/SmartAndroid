@@ -17,8 +17,8 @@ public abstract class ProtoLink implements IProtoLink, IProtoLinkHandler {
         return mProtoLinkImpl.connect(ip, port);
     }
 
-    public void	send(byte[] data, int len){
-        mProtoLinkImpl.send(data, len);
+    public void	send(int uri, byte[] data, int len){
+        mProtoLinkImpl.send(uri, data, len);
     }
 
     public void close(){
