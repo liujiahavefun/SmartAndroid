@@ -28,8 +28,6 @@ static pthread_t s_pthreadId = 0;
 
 NETENGINE_API int NetEngineStart()
 {
-	LOGE("NetEngineStart");
-
 	if(s_pthreadId > 0){
 	    LOGE("NetEngineStart, s_pthreadId is %d", s_pthreadId);
 	    return 0;
@@ -39,7 +37,7 @@ NETENGINE_API int NetEngineStart()
     IoEngine::Instance();
     MemPool::Instance();
 
-    return pthread_create(&s_pthreadId, NULL, &_io_engine_loop_func_linux, NULL);
+    return ::pthread_create(&s_pthreadId, NULL, &_io_engine_loop_func_linux, NULL);
 }
 
 NETENGINE_API int NetEngineStop()
@@ -59,14 +57,14 @@ NETENGINE_API int NetEngineStop()
     return 0;
 }
 
-NETENGINE_API Packet* PacketAlloc(const char* data, size_t len)
+NETENGINE_API Packet* PacketAlloc(uint32_t uri, const char* data, size_t len)
 {
-    return MemPool::Instance()->newPacket(data, len);
+    return MemPool::Instance()->create_packet(uri, data, len);
 }
 
 NETENGINE_API void PacketRelease(Packet* pkt)
 {
-    MemPool::Instance()->freePacket(pkt);
+    MemPool::Instance()->free_packet(pkt);
 }
 
 NETENGINE_API int ConnCreate(ConnAttr* attr)
@@ -114,7 +112,6 @@ NETENGINE_API int ConnClose(int connid)
 
 NETENGINE_API int ConnAddTimer(int connid, int id, int interval)
 {
-
 	if (connid == 0) {
 		return -1;
 	}
@@ -133,12 +130,4 @@ NETENGINE_API int ConnRemoveTimer(int connid, int id)
 	return 0;
 }
 
-/*
-// make no sense at all!
-NETENGINE_API int UnregisterEventHandler(IEventHandler* ev)
-{
-    return CConnMgr::Instance()->UnregEvHandler(ev);
-}
-*/
-
-}
+} //namespace NetEngine

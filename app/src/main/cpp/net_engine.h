@@ -2,8 +2,8 @@
 // Created by liujia on 16/8/16.
 //
 
-#ifndef CLOUDWOOD_ANDROID_NEW_NET_ENGINE_H
-#define CLOUDWOOD_ANDROID_NEW_NET_ENGINE_H
+#ifndef SMARTGO_ANDROID_NEW_NET_ENGINE_H
+#define SMARTGO_ANDROID_NEW_NET_ENGINE_H
 
 #include <sys/socket.h>
 #include <sys/select.h>
@@ -23,12 +23,12 @@
 #define SOCKET  int
 #endif
 
-#define INVALID_SOCKET (-1)
+#define INVALID_CONNID  (~0)
+#define INVALID_SOCKET  (-1)
 #define NETENGINE_API
 
 namespace NetEngine
 {
-#define CONNID_INVALID			(~0)
 
 #define FD_OP_READ  (0x0001)
 #define FD_OP_WRITE (0x0010)
@@ -54,7 +54,8 @@ static volatile long g_curConnId = 0;
 #endif
 
 /*
-* element of memory pool
+* network packet received or to sent
+* a packet thru network is composed of 4bytes header(length of the packet), 4bytes uri, then data
 */
 struct NETENGINE_API Packet
 {
@@ -70,15 +71,16 @@ struct NETENGINE_API Packet
     size_t		_dataLen;   //length of real data
     MemType     _type;
     uint64_t	_timestamp;
+    uint32_t    _uri;
 
-    Packet() : _data(NULL), _bufLen(0), _dataLen(0), _type(MEM_NEW_T), _timestamp(0){}
-    Packet(char* data, size_t bufLen) : _data(data), _bufLen(bufLen), _dataLen(0), _type(MEM_NEW_T), _timestamp(0){} //pre malloc buffer but not insert data
+    Packet() : _data(NULL), _bufLen(0), _dataLen(0), _type(MEM_NEW_T), _timestamp(0), _uri(0){}
+    Packet(char* data, size_t bufLen) : _data(data), _bufLen(bufLen), _dataLen(0), _type(MEM_NEW_T), _timestamp(0), _uri(0){} //pre malloc buffer but not insert data
     ~Packet(){ if(_data) delete _data; _data = NULL; _dataLen = _bufLen = 0; }
 
     inline void reset(){ memset(_data, 0, _dataLen); _dataLen = 0; }
 };
 
-NETENGINE_API Packet* PacketAlloc(const char* data, size_t len);
+NETENGINE_API Packet* PacketAlloc(uint32_t uri, const char* data, size_t len);
 NETENGINE_API void PacketRelease(Packet* pkt);
 
 /*
@@ -174,7 +176,7 @@ struct NETENGINE_API ConnAttr{
     // proxy, exts[0] = ExtMultiport, exts[1] = ExtCompress, exts[2] = ExtEncryption,
     // exts[3] = ExtProxy, exts[4] = NULL;
     const static int MAX_EXTENSIONS = 16;
-    Extension*			exts[MAX_EXTENSIONS];
+    Extension*	exts[MAX_EXTENSIONS];
 };
 
 /*
@@ -189,7 +191,7 @@ NETENGINE_API int NetEngineStop();
 
 /*
 * create a async connection that unconnected yet, need to call ConnConnect to do connect
-* @param attr:      use this struct to specify what kinds of connection you want to create
+* @param attr:      use this struct to specify what kinds of connection with specified parameters you want to create
 * @return int:      connection ID, INVALID_SOCKET(-1) will be returned if failed
 */
 NETENGINE_API int ConnCreate(ConnAttr* attr);
@@ -197,8 +199,8 @@ NETENGINE_API int ConnCreate(ConnAttr* attr);
 /*
 * do connect
 * @param connid : the connection id that ConnCreate returned, it's a connId to get associated connection in ConnMgr
-* @param ip     : target server ip
-* @param port   : target server port
+* @param ip     : target server ip, in network order
+* @param port   : target server port, in network order
 * @return       : int, return 0 if success, else -1 will be given
 */
 NETENGINE_API int ConnConnect(int connid, uint32_t ip = 0, uint16_t port = 0);
@@ -215,13 +217,6 @@ NETENGINE_API int ConnSend(int connid, Packet* pkt);
 * @param connid : the connection ID id that ConnCreate returned, it's a connId to get associated connection in ConnMgr
 */
 NETENGINE_API int ConnClose(int connid);
-
-/*
-*
-* @param	evHandler,	the evHandler will be unregister
-* @return	int,		the number of connection will be closed silently
-*/
-//NETENGINE_API int UnregEvHandler(IEventHandler* ev);
 
 /*
 * enable/disable tcp link NO_DELAY mode
@@ -243,4 +238,4 @@ NETENGINE_API int ConnAddTimer(int connid, int id, int interval);
 NETENGINE_API int ConnRemoveTimer(int connid, int id);
 }
 
-#endif //CLOUDWOOD_ANDROID_NEW_NET_ENGINE_H
+#endif //SMARTGO_ANDROID_NEW_NET_ENGINE_H

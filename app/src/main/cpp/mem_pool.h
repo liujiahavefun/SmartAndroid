@@ -2,8 +2,8 @@
 // Created by liujia on 16/8/19.
 //
 
-#ifndef CLOUDWOOD_ANDROID_NEW_MEM_POOL_H
-#define CLOUDWOOD_ANDROID_NEW_MEM_POOL_H
+#ifndef SMARTOGO_ANDROID_NEW_MEM_POOL_H
+#define SMARTOGO_ANDROID_NEW_MEM_POOL_H
 
 #include "net_engine.h"
 #include <deque>
@@ -29,8 +29,8 @@ public:
     static MemPool* Instance();
     static void Release();
 
-    Packet* newPacket(const char* data, size_t len);
-    void    freePacket(Packet* pkt);
+    Packet* create_packet(uint32_t uri, const char* data, uint32_t len);
+    void    free_packet(Packet* pkt);
 
 private:
     static MemPool* m_pInstance;
@@ -46,4 +46,4 @@ private:
     std::mutex          m_Lock;
 };
 
-#endif //CLOUDWOOD_ANDROID_NEW_MEM_POOL_H
+#endif //SMARTOGO_ANDROID_NEW_MEM_POOL_H
