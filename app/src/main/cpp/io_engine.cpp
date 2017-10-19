@@ -59,7 +59,7 @@ void IoEngine::stop()
 
 void IoEngine::addTimer(SOCKET sock, int id, int interval)
 {
-	LOGE("IoEngine.addTimer, sock/id/interval=%d/%d/%d", sock, id, interval);
+	LOGD("IoEngine.addTimer, sock/id/interval=%d/%d/%d", sock, id, interval);
 
     /*
 	TimerItem item;
@@ -86,7 +86,6 @@ void IoEngine::removeTimer(SOCKET sock, int id)
 	*/
 
     TimerItem t1(sock, id);
-
 	do{
         std::lock_guard<std::mutex> lock_(m_timerMutex);
         m_arrTimers.erase(std::remove(m_arrTimers.begin(), m_arrTimers.end(), t1), m_arrTimers.end());
@@ -163,9 +162,8 @@ void IoEngine::run(void*)
 			}
 		}
 
-		if( m_readSoSet.empty() && m_writeSoSet.empty() )
-		{
-		    ::usleep(100*1000);
+		if( m_readSoSet.empty() && m_writeSoSet.empty() ) {
+		    ::usleep(50*1000);
 			continue;
 		}
 
@@ -186,32 +184,29 @@ void IoEngine::run(void*)
         FD_ZERO(&FdSetRead);
         FD_ZERO(&FdSetWrite);
 
-        for (std::vector<SOCKET>::const_iterator citer = ReadSoSet.begin(); citer != ReadSoSet.end(); ++citer)
-        {
+        for (std::vector<SOCKET>::const_iterator citer = ReadSoSet.begin(); citer != ReadSoSet.end(); ++citer) {
             FD_SET(*citer, &FdSetRead);
             m_uMaxFd = m_uMaxFd < *citer ? *citer : m_uMaxFd;
         }
-        for (std::vector<SOCKET>::const_iterator citer = WriteSoSet.begin(); citer != WriteSoSet.end(); ++citer)
-        {
+        for (std::vector<SOCKET>::const_iterator citer = WriteSoSet.begin(); citer != WriteSoSet.end(); ++citer) {
             FD_SET(*citer, &FdSetWrite);
             m_uMaxFd = m_uMaxFd < *citer ? *citer : m_uMaxFd;
         }
 
         //in WIN32, the first param in select() is ignored, but in unix(linux),it's important and it's value is the max of readfd,writefd,expfd +1
-        int ret = (int)::select( m_uMaxFd+1 , &FdSetRead, &FdSetWrite, NULL, &mtimeout );
+        int ret = (int)::select( m_uMaxFd+1 , &FdSetRead, &FdSetWrite, NULL, &mtimeout);
         if ( 0 >= ret ) //error if ret > 0, ret == 0 is timeout
 		{
-			if (0 > ret)
-			{
+			if (0 > ret) {
 				nErrorCount++;
-				if( nErrorCount >= 50 )
-				{
+				if( nErrorCount >= 50 ) {
 				    LOGE("IoEngine::run, select failed, lasterror=%d", errno);
 					nErrorCount = 0;
 				}
 
-				::usleep(100*1000);
+				::usleep(50*1000);
 			}
+            //LOGE("IoEngine::run, select error");
             continue;
 		}
 
@@ -234,7 +229,7 @@ void IoEngine::run(void*)
         }
 
 		m_uDelayCheck++;
-		if( m_uDelayCheck >= 30 )
+		if( m_uDelayCheck >= 20 )
 		{
 			CConnMgr::Instance()->checkDelayRemove();
 			m_uDelayCheck = 0;
@@ -286,10 +281,10 @@ void IoEngine::_onSend(SOCKET s)
 void IoEngine::_onTimer(SOCKET sock, int id) {
 	IConn* pConn = _findConnBySocket(sock);
 	if (pConn) {
-		LOGE("IoEngine::_onTimer, sock/id=%d/%d", sock, id);
+		LOGD("IoEngine::_onTimer, sock/id=%d/%d", sock, id);
 		pConn->onTimer(id);
 	}
 	else {
-		LOGE("IoEngine::_onTimer, pConn==NULL for socket=%d", sock);
+		LOGD("IoEngine::_onTimer, pConn==NULL for socket=%d", sock);
 	}
 }
