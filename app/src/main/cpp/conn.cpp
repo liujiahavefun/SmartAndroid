@@ -34,6 +34,8 @@ inline uint64_t XHTONLL(uint64_t i64)
 
 
 static const int FIXED_HEADER_LENGTH = sizeof(uint32_t);
+static const int FIXED_URI_LENGTH = sizeof(uint32_t);
+
 static uint64_t g_uLastTime = 0;
 
 CConn::CConn()
@@ -154,7 +156,6 @@ int CConn::connect(uint32_t ip, uint16_t port)
 	if ( INADDR_ANY != ip ) {
         m_remoteAddr.sin_addr.s_addr = ip;
     }
-
 	if ( 0 != port) {
         m_remoteAddr.sin_port = htons(port);
     }
@@ -177,16 +178,13 @@ int CConn::connect(uint32_t ip, uint16_t port)
         this->onError();
         this->close();
     }
+    return ret;
 }
 
 int CConn::_connect(int ip, short port, int sockType)
 {
-    //LOGE("CConn::_connect, initial ip/port/type=%d/%d/%d", ip, port, sockType);
-
     //是否应该等connect好了，再打开读写？
     //IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_READ | FD_OP_WRITE, true);
-
-    //ip and port couldn't be 0, coz they were initialized in connect
 
     sockaddr_in destAddr;
     bzero(&destAddr, sizeof(destAddr));
@@ -194,18 +192,12 @@ int CConn::_connect(int ip, short port, int sockType)
     destAddr.sin_addr.s_addr = ip;
     destAddr.sin_port = port;
 
-    /*
-    char* ipaddr = "192.168.1.38";//"123.56.88.196";
-    port = 9100;
-    inet_pton(AF_INET, ipaddr, &destAddr.sin_addr);
-    destAddr.sin_port = htons(port);
-     */
-
     LOGE("CConn::_connect, ip/port/type=%d/%d/%d", destAddr.sin_addr.s_addr, destAddr.sin_port, sockType);
 
     m_status = CONN_CONNECTING;
 
-    //notifyConnState(CNetEventConnState::CS_TRANSPTLAYER_CONNECTING);
+    notifyEvent(CNetEvent::EV_CONNECTING, 0);
+    notifyConnState(CNetEventConnState::CS_TRANSPTLAYER_CONNECTING);
 
     if ( SOCK_STREAM == sockType )
     {
@@ -215,7 +207,6 @@ int CConn::_connect(int ip, short port, int sockType)
             uint32_t uLastErrorNo = errno;
             if( EINPROGRESS == uLastErrorNo ) {
                 //to judge it's connected
-                /*正在处理连接*/
                 fd_set fdr, fdw;
                 struct timeval timeout;
                 FD_ZERO(&fdr);
@@ -226,22 +217,22 @@ int CConn::_connect(int ip, short port, int sockType)
                 timeout.tv_usec = 0;
                 int rc = ::select(m_sockfd + 1, &fdr, &fdw, NULL, &timeout);
                 LOGE("CConn::_connect, EINPROGRESS, select return %d", rc);
-                /*select调用失败*/
+                //select调用失败
                 if (rc < 0) {
                     LOGE("CConn::_connect, EINPROGRESS, select failed, err: %s", strerror(errno));
                     return -1;
                 }
 
                 if (rc == 0) {
-                    /*连接超时*/
+                    //连接超时
                     LOGE("CConn::_connect, EINPROGRESS, select connect timeout");
                     return -1;
                 }else if (rc == 1 && FD_ISSET(m_sockfd, &fdw)) {
-                    /*[1] 当连接成功建立时，描述符变成可写,rc=1*/
+                    //[1] 当连接成功建立时，描述符变成可写,rc=1
                     LOGE("CConn::_connect, EINPROGRESS, connect success");
                     return 0;
                 }else if (rc == 2) {
-                    /*[2] 当连接建立遇到错误时，描述符变为即可读，也可写，rc=2 遇到这种情况，可调用getsockopt函数*/
+                    //[2] 当连接建立遇到错误时，描述符变为即可读，也可写，rc=2 遇到这种情况，可调用getsockopt函数
                     int so_error;
                     socklen_t len = sizeof(so_error);
                     if (getsockopt(m_sockfd, SOL_SOCKET, SO_ERROR, &so_error, &len) == -1) {
@@ -265,6 +256,7 @@ int CConn::_connect(int ip, short port, int sockType)
                 LOGE("CConn::_connect, Error: connect failed, lastError=%u", uLastErrorNo);
                 return -1;
             }
+            return -1;
         }
         return 0;
     }
@@ -369,8 +361,9 @@ int	CConn::removeTimer(int id)
 
 int CConn::onRecv()
 {
-    if (CONN_CLOSE == m_status || m_sockfd == INVALID_SOCKET )
+    if (CONN_CLOSE == m_status || m_sockfd == INVALID_SOCKET ) {
         return -1;
+    }
 
     // FD_OP_READ is set when connection established
     if ( CONN_CONNECTING == m_status )
@@ -411,69 +404,6 @@ int CConn::onRecv()
     return -1;
 }
 
-int CConn::_onMsgOOB(char* data, size_t len)    //MSG_OOB, urgent channel
-{
-    if(m_sockType != SOCK_STREAM || len < 4 || data == NULL)
-    {
-        return -1;
-    }
-
-    uint32_t length = peekLength(data);
-    if(length <= 4 || len < length)
-    {
-        LOGE("_onMsgOOB!!!wrong length of a MSG_OOB packet!!!len/buf_size=",length, len);
-        return -1;
-    }
-
-    CNetEvent evt;
-    Packet* pkt = MemPool::Instance()->newPacket(data, length);
-    pkt->_timestamp = getCurTime();
-
-    if ( m_pEvH )
-    {
-        evt.EvtType = CNetEvent::EV_IN;
-        evt.RetVal = 0;
-        m_pEvH->OnEvent(&evt, pkt);
-    }
-
-    return 0;
-}
-
-int CConn::_onDataDirect()       //not partition.
-{
-    CNetEvent evt;
-    if ( SOCK_DGRAM == m_sockType )
-    {
-        if ( m_input.size() < 4 ) //length < header, not enough data, udp drop this unnormal packet
-        {
-            LOGE("UDP Error: udp packet size < 4, drop it. size=", m_input.size());
-            m_input.free();
-            return 0;
-        }
-    }
-
-    if ( SOCK_STREAM == m_sockType || SOCK_DGRAM == m_sockType)
-    {
-        //assemble packet
-        if(!m_input.empty())
-        {
-            uint32_t length = (uint32_t)(m_input.size()); //let's see how long the packet is
-            Packet* pkt = MemPool::Instance()->newPacket(m_input.data(), length);
-            pkt->_timestamp = getCurTime();
-
-            if ( m_pEvH )
-            {
-                evt.EvtType = CNetEvent::EV_INSTREAM;
-                evt.RetVal = 0;
-                m_pEvH->OnEvent(&evt, pkt);
-            }
-            m_input.erase(0, length);
-        }
-    }
-
-    return 0;
-}
-
 int CConn::_onData()
 {
     if ( SOCK_STREAM == m_sockType)
@@ -482,23 +412,29 @@ int CConn::_onData()
         while (!m_input.empty())
         {
             //length < header, not enough data, tcp wait
-            if (m_input.size() < FIXED_HEADER_LENGTH)
+            if (m_input.size() < FIXED_HEADER_LENGTH) {
                 break;
+            }
 
             //let's see how long the packet is
             uint32_t length = peekLength(m_input.data());
-            if (length <= 4)
-            {
+            if (length <= FIXED_HEADER_LENGTH + FIXED_URI_LENGTH) {
                 LOGE("TCP Fxxk!!!wrong length of a packet!!!len/buf_size=",length, m_input.size());
                 onError();
 				break;
             }
 
-            if (m_input.size() < length) //current data in buffer can't assemble a packet, not enough data
+            //current data in buffer can't assemble a packet, not enough data
+            if (m_input.size() < length) {
                 break;
+            }
+
+            uint32_t uri = *((uint32_t*)(m_input.data() + FIXED_HEADER_LENGTH));
+            const char* data = m_input.data() + FIXED_HEADER_LENGTH + FIXED_URI_LENGTH;
+            LOGD("recv TCP packet, id:%u, len:%d, data:%s", uri, length, data);
 
             //the length only contains the body length, not contain the header itself
-            Packet* pkt = MemPool::Instance()->newPacket(m_input.data() + FIXED_HEADER_LENGTH, length);
+            Packet* pkt = MemPool::Instance()->create_packet(uri, m_input.data() + FIXED_HEADER_LENGTH + FIXED_URI_LENGTH, length - FIXED_HEADER_LENGTH - FIXED_URI_LENGTH);
             pkt->_timestamp = getCurTime();
 
             CNetEvent evtTcp;
@@ -513,22 +449,26 @@ int CConn::_onData()
     }
     else if ( SOCK_DGRAM == m_sockType )
     {
-        if ( m_input.size() < FIXED_HEADER_LENGTH ) //length < header, not enough data, udp drop this unnormal packet
-        {
-            LOGE("UDP Error: udp packet size < 4, drop it. size=",m_input.size());
+        //length < header, not enough data, udp drop this unnormal packet
+        if ( m_input.size() <= FIXED_HEADER_LENGTH + FIXED_URI_LENGTH) {
+            LOGE("UDP Error: udp packet size < 4+4, drop it. size=", m_input.size());
             m_input.free();
             return 0;
         }
 
         uint32_t length = peekLength(m_input.data()); //let's see how long the packet is
-        if ( length != m_input.size() ) //an udp packet in input buffer
-        {
+        if ( length != m_input.size() ) {
+            //an udp packet in input buffer
             LOGE("UDP Fxxk!!!wrong length of a packet!!!len/buf_size=",length,m_input.size());
             m_input.free();
             return 0;
         }
 
-        Packet* pkt = MemPool::Instance()->newPacket(m_input.data() + FIXED_HEADER_LENGTH, length);
+        uint32_t uri = *((uint32_t*)(m_input.data() + FIXED_HEADER_LENGTH));
+        const char* data = m_input.data() + FIXED_HEADER_LENGTH + FIXED_URI_LENGTH;
+        LOGD("recv UDP packet, id:%u, len:%d, data:%s", uri, length, data);
+
+        Packet* pkt = MemPool::Instance()->create_packet(uri, m_input.data() + FIXED_HEADER_LENGTH + FIXED_URI_LENGTH, length - FIXED_HEADER_LENGTH - FIXED_URI_LENGTH);
         pkt->_timestamp = getCurTime();
 
         CNetEvent evtUdp;
@@ -628,11 +568,11 @@ int CConn::onConnected()
 {
 	LOGE("CConn::onConnected, m_connId/socket/status=%d/%d/%d", m_connId, m_sockfd, m_status);
 
-    //这里只设置READ事件，WRITE事件在发送时设置，发送完事就unregister
-    IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_WRITE, false); //unregister onWrite event from select (or onSend event will be given every time!)
+    m_status = CONN_CONNECTED;
 
-    //stats
-    notifyConnState(CNetEventConnState::CS_TRANSPTLAYER_CONNECTED);
+    //这里只设置READ事件，WRITE事件在发送时设置，发送完事就unregister
+    IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_READ, true);
+    IoEngine::Instance()->setEvent(this, m_sockfd, FD_OP_WRITE, false); //unregister onWrite event from select (or onSend event will be given every time!)
 
     //if (m_pLastLayer)
     //    return m_pLastLayer->onConnected();
@@ -642,9 +582,20 @@ int CConn::onConnected()
 
 int CConn::_onConnected()
 {
-    notifyEvent(CNetEvent::EV_CONNECTED, 0);
-    notifyConnState(CNetEventConnState::CS_CONNECTED);
+    /*
+    uint32_t id = 8899;
+    const char* p = "smallball";
+    const char* data = new char[sizeof(uint32_t) + strlen(p)];
+    memcpy((void*)data, &id, sizeof(uint32_t));
+    memcpy((void*)(data+4), p, strlen(p));
 
+    NetEngine::Packet* pkt = NetEngine::PacketAlloc(id, data, sizeof(uint32_t) + strlen(p));
+    this->send(pkt->_data, pkt->_dataLen);
+    NetEngine::PacketRelease(pkt);
+    */
+
+    notifyConnState(CNetEventConnState::CS_CONNECTED);
+    notifyEvent(CNetEvent::EV_CONNECTED, 0);
     return 0;
 }
 
@@ -673,30 +624,34 @@ int CConn::onTimer(int id)
 
 void CConn::notifyConnState(int state)
 {
+    /*
     CNetEventConnState evt;
     evt.EvtType = CNetEvent::EV_CONNSTATE;
     evt.ConnId = m_connId;
     evt.RetVal = 0;
     evt.state = state;
     evt.timestamp = GetTimestamp();
+    */
 
     //if(m_pEvH)
     //   m_pEvH->OnEvent(&evt, NULL);
-    jni_callback::instance().notify_conn_event(&evt, NULL);
+    jni_callback::instance().on_event(m_connId, CNetEvent::EV_CONNSTATE, state);
 }
 
 void CConn::notifyEvent(int eventType, unsigned long retVal)
 {
+    /*
     CNetEventConnState evt;
     evt.EvtType = eventType;
     evt.ConnId = m_connId;
     evt.RetVal = retVal;
     evt.state = CNetEventConnState::CS_STATE_UNKNOWN;
     evt.timestamp = GetTimestamp();
+    */
 
     //if(m_pEvH)
     //   m_pEvH->OnEvent(&evt, NULL);
-    jni_callback::instance().notify_conn_event(&evt, NULL);
+    jni_callback::instance().on_event(m_connId, eventType, retVal);
 }
 
 void CConn::notifyInData(CNetEvent* evt, Packet* pkt)
@@ -705,16 +660,18 @@ void CConn::notifyInData(CNetEvent* evt, Packet* pkt)
         return;
     }
 
+    /*
     CNetEventConnState event;
     event.ConnId = m_connId;
     event.EvtType = evt->EvtType;
     event.RetVal = evt->RetVal;
     event.state = CNetEventConnState::CS_CONNECTED;
     event.timestamp = GetTimestamp();
+    */
 
     //if(m_pEvH)
     //   m_pEvH->OnEvent(&event, pkt);
-    jni_callback::instance().notify_conn_event(&event, pkt);
+    jni_callback::instance().on_data(m_connId, pkt->_data+2*sizeof(uint32_t), pkt->_dataLen-2*sizeof(uint32_t));
 }
 
 ILinkLayer* CConn::createLayer(Extension* ext)
@@ -773,6 +730,69 @@ uint32_t CConn::tryPartitionPkt()
         else
         {
             return length;
+        }
+    }
+
+    return 0;
+}
+
+int CConn::_onMsgOOB(char* data, size_t len)    //MSG_OOB, urgent channel
+{
+    if(m_sockType != SOCK_STREAM || len < 4 || data == NULL) {
+        return -1;
+    }
+
+    uint32_t length = peekLength(data);
+    if(length <= 8 || len < length) {
+        LOGE("_onMsgOOB!!!wrong length of a MSG_OOB packet!!!len/buf_size=",length, len);
+        return -1;
+    }
+
+    uint32_t uri = peekLength(data+4);
+
+    CNetEvent evt;
+    Packet* pkt = MemPool::Instance()->create_packet(uri, data, length);
+    pkt->_timestamp = getCurTime();
+
+    if ( m_pEvH )
+    {
+        evt.EvtType = CNetEvent::EV_IN;
+        evt.RetVal = 0;
+        m_pEvH->OnEvent(&evt, pkt);
+    }
+
+    return 0;
+}
+
+int CConn::_onDataDirect()       //not partition.
+{
+    CNetEvent evt;
+    if ( SOCK_DGRAM == m_sockType )
+    {
+        if ( m_input.size() < 4 ) //length < header, not enough data, udp drop this unnormal packet
+        {
+            LOGE("UDP Error: udp packet size < 4, drop it. size=", m_input.size());
+            m_input.free();
+            return 0;
+        }
+    }
+
+    if ( SOCK_STREAM == m_sockType || SOCK_DGRAM == m_sockType)
+    {
+        //assemble packet
+        if(!m_input.empty())
+        {
+            uint32_t length = (uint32_t)(m_input.size()); //let's see how long the packet is
+            Packet* pkt = MemPool::Instance()->create_packet(0, m_input.data(), length);
+            pkt->_timestamp = getCurTime();
+
+            if ( m_pEvH )
+            {
+                evt.EvtType = CNetEvent::EV_INSTREAM;
+                evt.RetVal = 0;
+                m_pEvH->OnEvent(&evt, pkt);
+            }
+            m_input.erase(0, length);
         }
     }
 
