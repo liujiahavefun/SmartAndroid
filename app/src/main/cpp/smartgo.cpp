@@ -57,7 +57,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_NetEng
  * Signature: (Lcom/smart/android/smartandroid/jni/ConnAttrWrapper;)I
  */
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCreate
-  (JNIEnv* env, jobject obj, jobject attr)
+  (JNIEnv* env, jobject thiz, jobject attr)
 {
     LOGD("ConnCreate");
 
@@ -93,15 +93,15 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCr
         return -1;
     }
 
-    LOGD("type: %d, remote ip: %s, remote port: %s, local ip: %s, local port: %s", conn_type, remote_ip.c_str(), remote_port.c_str(), local_ip.c_str(), local_port.c_str());
+    LOGD("ConnCreate, type: %d, remote ip: %s, remote port: %s, local ip: %s, local port: %s", conn_type, remote_ip.c_str(), remote_port.c_str(), local_ip.c_str(), local_port.c_str());
     env->DeleteLocalRef(clazz);
 
     if(conn_type != NetEngine::ConnAttr::CONN_TCP && conn_type != NetEngine::ConnAttr::CONN_UDP){
         return -2;
     }
 
-    if(conn_type == NetEngine::ConnAttr::CONN_UDP){
-        if(local_ip.empty() || local_port.empty()){
+    if(conn_type == NetEngine::ConnAttr::CONN_UDP) {
+        if(local_ip.empty() || local_port.empty()) {
             return -2;
         }
     }
@@ -146,7 +146,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCl
  * Signature: (I[B)I
  */
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSend
-  (JNIEnv * env, jobject thiz, jint conn_id, jbyteArray jbarray, jint len)
+  (JNIEnv * env, jobject thiz, jint conn_id, jint uri, jbyteArray jbarray, jint len)
 {
     LOGD("ConnSend");
 
@@ -162,7 +162,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSe
     }
 
     //发包
-    NetEngine::Packet* pk = NetEngine::PacketAlloc(buffer, len);
+    NetEngine::Packet* pk = NetEngine::PacketAlloc(uri, buffer, len);
     NetEngine::ConnSend(conn_id, pk);
     NetEngine::PacketRelease(pk);
 

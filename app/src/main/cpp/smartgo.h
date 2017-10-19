@@ -53,7 +53,7 @@ JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnCl
  * Signature: (I[BI)I
  */
 JNIEXPORT jint JNICALL Java_com_smart_android_smartandroid_jni_JniManager_ConnSend
-  (JNIEnv *, jobject, jint, jbyteArray, jint);
+  (JNIEnv *, jobject, jint, jint, jbyteArray, jint);
 
 /*
  * Class:     com_smart_android_smartandroid_jni_JniManager
