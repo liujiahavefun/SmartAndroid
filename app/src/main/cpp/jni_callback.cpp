@@ -149,7 +149,8 @@ void jni_callback::on_event(int conn_id, int event_id, long val)
     env->DeleteLocalRef(clazz);
 }
 
-void jni_callback::on_data(int conn_id, int uri, const char* data, int len) {
+void jni_callback::on_data(int conn_id, int uri, const char* data, int len)
+{
     //get JNIEnv
     JNIEnv* env = getEnv();
     if(env == NULL){
@@ -165,9 +166,9 @@ void jni_callback::on_data(int conn_id, int uri, const char* data, int len) {
     }
 
     //get method
-    jmethodID method_id = env->GetStaticMethodID(clazz, "OnData", "(I[BI)V");
+    jmethodID method_id = env->GetStaticMethodID(clazz, "OnData", "(II[BI)V");
     if (method_id == NULL) {
-        LOGE("failed to find static method [OnEvent]");
+        LOGE("failed to find static method [OnData]");
         return;
     }
 
