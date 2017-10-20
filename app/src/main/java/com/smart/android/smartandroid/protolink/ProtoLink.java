@@ -10,8 +10,15 @@ public abstract class ProtoLink implements IProtoLink, IProtoLinkHandler {
         mProtoLinkImpl = new ProtoLinkImpl(linkType, this);
     }
 
+    public boolean isConnected(){
+        return mProtoLinkImpl.getStatus() == ProtoConstant.LinkStatus.LINK_CONNECTED;
+    }
+    public boolean isConnecting(){
+        return mProtoLinkImpl.getStatus() == ProtoConstant.LinkStatus.LINK_CONNECTING;
+    }
+
     /*
-     * implements IProtoLink
+     * default implementment of IProtoLink
      */
     public boolean connect(String ip, String port){
         return mProtoLinkImpl.connect(ip, port);
@@ -25,13 +32,9 @@ public abstract class ProtoLink implements IProtoLink, IProtoLinkHandler {
         mProtoLinkImpl.close();
     }
 
-    public boolean isConnected(){
-        return mProtoLinkImpl.getStatus() == ProtoConstant.LinkStatus.LINK_CONNECTED;
-    }
-    public boolean isConnecting(){
-        return mProtoLinkImpl.getStatus() == ProtoConstant.LinkStatus.LINK_CONNECTING;
-    }
-
+    /*
+     * stub implementment of IProtoLink, upper MUST implement again!
+     */
     public void onConnected(){
         throw new RuntimeException("Stub!");
     }

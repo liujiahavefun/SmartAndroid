@@ -4,16 +4,17 @@ import android.text.TextUtils;
 
 import com.smart.android.smartandroid.jni.ConnAttrWrapper;
 import com.smart.android.smartandroid.jni.ConnEventWrapper;
-import com.smart.android.smartandroid.jni.JniEventHandler;
+import com.smart.android.smartandroid.jni.EventHandlerMgr;
 import com.smart.android.smartandroid.jni.JniManager;
-import com.smart.android.smartandroid.protolink.IEventHandler;
-import com.smart.android.smartandroid.protolink.IProtoLinkHandler;
-import com.smart.android.smartandroid.protolink.IProtoLink;
 
 /**
  * Created by liujia on 16/9/3.
+ * 长连接真正的干活的黄牛类，如其implement的三个接口，干三个活
+ * 实现IProtoLink接口，可以控制连接connect、close、send
+ * 实现IEventHandler接口，接收JNI发过来的网络事件
+ * 实现IProtoLinkHandler，其实也可以不实现，不过为了兼容上层，实现也无妨，就是把底层的IEventHandler的事件转成IProtoLinkHandler，向上传递
  */
-public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLink {
+public class ProtoLinkImpl implements IProtoLink, IProtoLinkHandler, IEventHandler {
     private static final int CONNECT_TIMEOUT_TIMER = 0xFFFF;
 
     private IProtoLinkHandler mProtoLinkHandler;
@@ -36,6 +37,8 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
             return false;
         }
 
+        mLinkStatus = ProtoConstant.LinkStatus.LINK_CONNECTING;
+
         //create conn
         ConnAttrWrapper attr = new ConnAttrWrapper();
         attr.ConnType = (mLinkType == ProtoConstant.LinkType.TCP_LINK ? ConnAttrWrapper.SOCKET_TCP : ConnAttrWrapper.SOCKET_UDP);
@@ -48,17 +51,19 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
             return false;
         }
 
+        //register callback
+        EventHandlerMgr.registerHandler(mConnId, this);
+
         //disable nagle algorithm
-        //JniManager.GetInstance().ConnSetNoDelay(mConnId, true);
+        JniManager.GetInstance().ConnSetNoDelay(mConnId, true);
 
         //do connect
         if(JniManager.GetInstance().ConnConnect(mConnId, 0, (short)0) != 0 ){
             return false;
         }
 
-        //register event handler and to connect!
-        JniEventHandler.registerHandler(mConnId, this);
-        JniManager.GetInstance().ConnAddTimer(mConnId, CONNECT_TIMEOUT_TIMER, 5);
+        //add timer
+        //JniManager.GetInstance().ConnAddTimer(mConnId, CONNECT_TIMEOUT_TIMER, 5);
 
         return true;
     }
@@ -67,8 +72,12 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
         if(mConnId <= 0){
             return;
         }
-        mDataTotalSent += len;
-        JniManager.GetInstance().ConnSend(uri, mConnId, data, len);
+
+        if(JniManager.GetInstance().ConnSend(uri, mConnId, data, len) == 0) {
+            mDataTotalSent += len;
+        }else {
+            ProtoLogger.LogWarning("send data failed, conn %d", mConnId);
+        }
     }
 
     public void close(){
@@ -77,7 +86,7 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
         JniManager.GetInstance().ConnRemoveTimer(mConnId, 0); //remove all timers
 
         //unregister event handler
-        JniEventHandler.unregisterHandler(mConnId);
+        EventHandlerMgr.unregisterHandler(mConnId);
     }
 
     public ProtoConstant.LinkStatus getStatus() {
@@ -85,20 +94,22 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
     }
 
     public void onConnected(){
+        mLinkStatus = ProtoConstant.LinkStatus.LINK_CONNECTED;
         if(mProtoLinkHandler != null){
             mProtoLinkHandler.onConnected();
         }
     }
 
     public void onError(){
+        mLinkStatus = ProtoConstant.LinkStatus.LINK_ERROR;
         if(mProtoLinkHandler != null){
             mProtoLinkHandler.onError();
         }
     }
 
-    public void onData(long timestamp, byte[] data, int len){
+    public void onData(int uri, byte[] data, int len){
         if(mProtoLinkHandler != null){
-            mProtoLinkHandler.onData(timestamp, data, len);
+            mProtoLinkHandler.onData(uri, data, len);
         }
     }
 
@@ -108,6 +119,8 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
         }
     }
 
+
+    /*
     public void onEvent(ConnEventWrapper event, byte[] data, int len){
         switch (event.eventType){
             case ConnEventWrapper.EVENT_CONNECTED:
@@ -136,5 +149,29 @@ public class ProtoLinkImpl implements IProtoLinkHandler, IEventHandler, IProtoLi
             default:
                 break;
         }
+    }
+    */
+    public void onEvent(int connId, int event, long val) {
+        if(mConnId != connId) {
+            ProtoLogger.LogWarning("received net event of conn %d, but not my conn %d", connId, mConnId);
+            return;
+        }
+        switch (event) {
+            case ConnEventWrapper.EVENT_CONNECTED:
+                onConnected();
+                break;
+            case ConnEventWrapper.EVENT_ERROR:
+                onError();
+                close();
+                break;
+            case ConnEventWrapper.EVENT_TIMER:
+                onTimer((int)val);
+                break;
+        }
+    }
+
+    public void onData(int connId, int uri, byte[] data, int len) {
+        mDataTotalRecv += len;
+        onData(uri, data, len);
     }
 }

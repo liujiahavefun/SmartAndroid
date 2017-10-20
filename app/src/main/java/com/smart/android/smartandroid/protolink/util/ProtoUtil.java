@@ -12,6 +12,7 @@ public class ProtoUtil {
     * String[] both = concat(first, second);
     */
     public static byte[] concat(byte[] first, byte[] second) {
+        /*
         if(first == null) {
             return second;
         }
@@ -21,6 +22,9 @@ public class ProtoUtil {
         byte[] result = Arrays.copyOf(first, first.length + second.length);
         System.arraycopy(second, 0, result, first.length, second.length);
         return result;
+        */
+
+        return concatAll(first, second);
     }
 
     /*

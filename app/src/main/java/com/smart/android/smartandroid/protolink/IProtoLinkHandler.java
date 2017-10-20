@@ -7,6 +7,6 @@ package com.smart.android.smartandroid.protolink;
 public interface IProtoLinkHandler {
     void onConnected();
     void onError();
-    void onData(long timestamp, byte[] data, int len);
+    void onData(int uri, byte[] data, int len);
     void onTimer(int timerId);
 }
