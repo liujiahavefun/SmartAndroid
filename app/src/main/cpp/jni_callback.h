@@ -17,10 +17,10 @@ public:
 public:
     void log(int level, const char* format, ...);
     void on_event(int conn_id, int event_id, long val);
-    void on_data(int conn_id, const char* data, int len);
+    void on_data(int conn_id, int uri, const char* data, int len);
 
     template<typename ... Args>
-    void call(const char* name, Args... args);
+    void call(const char* full_class_name, const char* name, Args... args);
 
     //int notify_conn_event(NetEngine::CNetEventConnState* state, NetEngine::Packet* pkt);
 

@@ -2,6 +2,7 @@ package com.smart.android.smartandroid.protolink;
 
 /**
  * Created by liujia on 17/1/18.
+ * 保存信息
  */
 
 public enum ProtoInfo {

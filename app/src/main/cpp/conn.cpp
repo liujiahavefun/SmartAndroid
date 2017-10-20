@@ -589,7 +589,7 @@ int CConn::_onConnected()
     memcpy((void*)data, &id, sizeof(uint32_t));
     memcpy((void*)(data+4), p, strlen(p));
 
-    NetEngine::Packet* pkt = NetEngine::PacketAlloc(id, data, sizeof(uint32_t) + strlen(p));
+    NetEngine::Packet* pkt = NetEngine::PacketAlloc(id, data, strlen(p));
     this->send(pkt->_data, pkt->_dataLen);
     NetEngine::PacketRelease(pkt);
     */
@@ -671,7 +671,7 @@ void CConn::notifyInData(CNetEvent* evt, Packet* pkt)
 
     //if(m_pEvH)
     //   m_pEvH->OnEvent(&event, pkt);
-    jni_callback::instance().on_data(m_connId, pkt->_data+2*sizeof(uint32_t), pkt->_dataLen-2*sizeof(uint32_t));
+    jni_callback::instance().on_data(m_connId, pkt->_uri, pkt->_data+2*sizeof(uint32_t), pkt->_dataLen-2*sizeof(uint32_t));
 }
 
 ILinkLayer* CConn::createLayer(Extension* ext)

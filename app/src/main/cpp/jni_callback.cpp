@@ -11,7 +11,7 @@
  * 1）对于native线程，启动时(或者getenv时)，调用AttachCurrentThread去将JNIEnv attach到当前线程(顺便也获取了当前线程的JNIEnv，这个对象是与线程绑定的)
  * 2）java通过jni调用native函数时，必须通过JniManager对象调用，并传递了这个对象作为第二个参数。见NetEngineStart函数
  *    我们要做的就是保存这个对象的一个全局引用，即g_JNICallbackObj
- * 3）回调时，显示百分百无法通过env->FindClass("com/smart/android/smartandroid/jni/JniEventHandler")找打回调类
+ * 3）回调时，显示百分百无法通过env->FindClass("com/smart/android/smartandroid/jni/JniManager")找到回调类
  *    我们这样，通过GetObjectClass，获得这个回调对象的类
  * 4）然后拿到jclass了，就好办了，就拿各种method，再回调就好了
  */
@@ -51,7 +51,7 @@ L类名 object   例如 Lcom/cloudywood/ip/jni/ConnEventWrapper
    CallByteMethod                   CallStaticVoidMethod
 */
 
-const char* JAVA_CALLBACK_CLASS = "com/smart/android/smartandroid/jni/JniEventHandler";
+const char* JAVA_CALLBACK_CLASS = "com/smart/android/smartandroid/jni/JniManager";
 
 jni_callback& jni_callback::instance()
 {
@@ -65,13 +65,14 @@ jni_callback::jni_callback()
 jni_callback::~jni_callback()
 {}
 
+//call任意java类的静态函数
 template<typename ... Args>
-void jni_callback::call(const char* func_name, Args... args)
+void jni_callback::call(const char* full_class_name, const char* func_name, Args... args)
 {
     return;
 }
 
-//liujia: TODO, 提前返回的话有资源泄露的可能，goto凑活一下可以解决
+//level: 0 debug 1 info 2 warning 3 error
 void jni_callback::log(int level, const char* format, ...)
 {
     //get JNIEnv
@@ -148,7 +149,8 @@ void jni_callback::on_event(int conn_id, int event_id, long val)
     env->DeleteLocalRef(clazz);
 }
 
-void jni_callback::on_data(int conn_id, const char* data, int len) {
+void jni_callback::on_data(int conn_id, int uri, const char* data, int len)
+{
     //get JNIEnv
     JNIEnv* env = getEnv();
     if(env == NULL){
@@ -164,9 +166,9 @@ void jni_callback::on_data(int conn_id, const char* data, int len) {
     }
 
     //get method
-    jmethodID method_id = env->GetStaticMethodID(clazz, "OnData", "(I[BI)V");
+    jmethodID method_id = env->GetStaticMethodID(clazz, "OnData", "(II[BI)V");
     if (method_id == NULL) {
-        LOGE("failed to find static method [OnEvent]");
+        LOGE("failed to find static method [OnData]");
         return;
     }
 
@@ -176,7 +178,7 @@ void jni_callback::on_data(int conn_id, const char* data, int len) {
 
 
     //call callback fucntion
-    env->CallStaticVoidMethod(clazz, method_id, conn_id, jbarray, len);
+    env->CallStaticVoidMethod(clazz, method_id, conn_id, uri, jbarray, len);
 
     //release ref
     env->DeleteLocalRef(clazz);

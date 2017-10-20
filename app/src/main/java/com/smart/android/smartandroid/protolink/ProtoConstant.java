@@ -3,6 +3,7 @@ package com.smart.android.smartandroid.protolink;
 /**
  * Created by liujia on 16/9/3.
  */
+
 public class ProtoConstant {
     public enum LinkStatus {
         LINK_INITED,
