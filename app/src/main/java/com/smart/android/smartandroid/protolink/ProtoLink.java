@@ -43,7 +43,7 @@ public abstract class ProtoLink implements IProtoLink, IProtoLinkHandler {
         throw new RuntimeException("Stub!");
     }
 
-    public void onData(long timestamp, byte[] data, int len){
+    public void onData(int uri, byte[] data, int len){
         throw new RuntimeException("Stub!");
     }
 
