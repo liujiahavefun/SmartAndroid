@@ -1,6 +1,6 @@
 package com.smart.android.smartandroid.jni;
 
-import com.smart.android.smartandroid.util.LogUtil;
+import com.smart.android.smartandroid.protolink.ProtoLogger;
 
 /**
  * Created by liujia on 16/8/17.
@@ -41,14 +41,14 @@ public class JniManager {
 
     // callback function from JNI
     public static void OnEvent(int connId, int eventId, long val){
-        LogUtil.e("JNI", String.format("OnEvent, connId:%d, eventId:%d, val:%d", connId, eventId, val));
+        EventHandlerMgr.onEvent(connId, eventId, val);
     }
 
-    public static void OnData(int connId, byte[] data, int len){
-        LogUtil.e("JNI", String.format("OnData, connId:%d, data:%s, len:%d", connId, new String(data, 0, len), len));
+    public static void OnData(int connId, int uri, byte[] data, int len){
+        EventHandlerMgr.onData(connId, uri, data, len);
     }
 
     public static void OnLog(int level, String msg){
-        LogUtil.e("JNI", String.format("OnLog, level:%d, msg:%s", level, msg));
+        ProtoLogger.Log(level, msg);
     }
 }
