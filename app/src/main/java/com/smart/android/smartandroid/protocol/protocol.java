@@ -34,7 +34,7 @@ public class protocol {
     * 子服务的ID
     */
     public static final int SVID_ALL = 0;
-    public static final int SVID_LOGIN = 1;
+    public static final int SVID_LOGIN = 16;
     public static final int SVID_PUSH = 2;
 
     /*
