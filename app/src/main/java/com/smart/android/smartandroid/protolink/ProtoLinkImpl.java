@@ -73,7 +73,7 @@ public class ProtoLinkImpl implements IProtoLink, IProtoLinkHandler, IEventHandl
             return;
         }
 
-        if(JniManager.GetInstance().ConnSend(uri, mConnId, data, len) == 0) {
+        if(JniManager.GetInstance().ConnSend(mConnId, uri, data, len) == 0) {
             mDataTotalSent += len;
         }else {
             ProtoLogger.LogWarning("send data failed, conn %d", mConnId);
@@ -119,7 +119,6 @@ public class ProtoLinkImpl implements IProtoLink, IProtoLinkHandler, IEventHandl
         }
     }
 
-
     /*
     public void onEvent(ConnEventWrapper event, byte[] data, int len){
         switch (event.eventType){
@@ -156,7 +155,12 @@ public class ProtoLinkImpl implements IProtoLink, IProtoLinkHandler, IEventHandl
             ProtoLogger.LogWarning("received net event of conn %d, but not my conn %d", connId, mConnId);
             return;
         }
+
+        ProtoLogger.LogInfo(ProtoLogger.Event2String(connId, event, val));
+
         switch (event) {
+            case ConnEventWrapper.EVENT_CONNECTING:
+                break;
             case ConnEventWrapper.EVENT_CONNECTED:
                 onConnected();
                 break;
