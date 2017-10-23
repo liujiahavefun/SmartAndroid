@@ -14,4 +14,9 @@ public interface ProtoTimerTaskRunnable extends ProtoTaskRunnable {
      * 定时任务执行间隔，单位ms。
      */
     int getInterval();
+
+    /*
+     * 定时任务首次执行间隔
+     */
+    int getFirstDelay();
 }

@@ -41,6 +41,11 @@ public class ReconnectTask implements ProtoTimerTaskRunnable {
     }
 
     @Override
+    public int getFirstDelay() {
+        return 0;
+    }
+
+    @Override
     public void run(){
         if(mLoginMgr != null) {
             mLoginMgr.realReconnect();

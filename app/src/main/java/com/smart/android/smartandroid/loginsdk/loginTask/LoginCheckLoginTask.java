@@ -42,6 +42,11 @@ public class LoginCheckLoginTask implements ProtoTimerTaskRunnable {
     }
 
     @Override
+    public int getFirstDelay() {
+        return mDelay;
+    }
+
+    @Override
     public void run(){
         ProtoLogger.Log("LoginCheckLoginTask.run");
 

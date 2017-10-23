@@ -7,7 +7,8 @@ import com.smart.android.smartandroid.protolink.ProtoLogger;
 import com.smart.android.smartandroid.protolink.worker.ProtoTimerTaskRunnable;
 
 /**
- * Created by root on 16/10/4.
+ * Created by liujia on 16/10/4.
+ * 检查是否连接，没连接就重连
  */
 
 public class LoginCheckConnectTask implements ProtoTimerTaskRunnable {
@@ -35,6 +36,11 @@ public class LoginCheckConnectTask implements ProtoTimerTaskRunnable {
 
     @Override
     public int getInterval() {
+        return mInterval;
+    }
+
+    @Override
+    public int getFirstDelay() {
         return mInterval;
     }
 

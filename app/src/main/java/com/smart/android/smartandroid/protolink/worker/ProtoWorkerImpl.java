@@ -117,11 +117,11 @@ public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
 
         Future<?> f;
 
-        //liujia: 这块可以细思量，一次性延时任务之间延迟执行就ok了，多次定时任务，究竟从当前开始定时之前，还是延迟一个定时后再执行好呢？
+        //liujia: 这块可以细思量，一次性延时任务直接延迟执行就ok了，多次定时任务，究竟从当前开始定时之前，还是延迟一个定时后再执行好呢？
         if (task.isRepeat()) {
-            f = mProtoExecutor.scheduleAtFixedRate(new TaskWrapper(this, task, TASK_PERIODIC), 0, task.getInterval(), TimeUnit.MILLISECONDS);
+            f = mProtoExecutor.scheduleAtFixedRate(new TaskWrapper(this, task, TASK_PERIODIC), task.getFirstDelay(), task.getInterval(), TimeUnit.MILLISECONDS);
         }else {
-            f = mProtoExecutor.schedule(new TaskWrapper(this, task, TASK_DELAY), task.getInterval(), TimeUnit.MILLISECONDS);
+            f = mProtoExecutor.schedule(new TaskWrapper(this, task, TASK_DELAY), task.getFirstDelay(), TimeUnit.MILLISECONDS);
         }
 
         mTimerFutureQueue.add(new FutureWrapper(task.getTaskId(), task.hashCode(), f));

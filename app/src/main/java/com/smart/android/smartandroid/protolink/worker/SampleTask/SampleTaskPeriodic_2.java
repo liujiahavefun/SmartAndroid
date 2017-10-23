@@ -44,4 +44,9 @@ public class SampleTaskPeriodic_2 implements ProtoTimerTaskRunnable {
     public int getInterval() {
         return 1000;
     }
+
+    @Override
+    public int getFirstDelay() {
+        return 1000;
+    }
 }

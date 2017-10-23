@@ -25,6 +25,21 @@ public class SampleTaskPeriodic_1 implements ProtoTimerTaskRunnable {
     }
 
     @Override
+    public boolean isRepeat() {
+        return true;
+    }
+
+    @Override
+    public int getInterval() {
+        return 500;
+    }
+
+    @Override
+    public int getFirstDelay() {
+        return 10;
+    }
+
+    @Override
     public void run(){
         try {
             LogUtil.e("ProtoWorker", "start to run SampleTaskPeriodic_1");
@@ -33,15 +48,5 @@ public class SampleTaskPeriodic_1 implements ProtoTimerTaskRunnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public boolean isRepeat() {
-        return true;
-    }
-
-    @Override
-    public int getInterval() {
-        return 500;
     }
 }

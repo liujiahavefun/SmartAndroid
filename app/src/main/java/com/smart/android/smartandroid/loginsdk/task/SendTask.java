@@ -2,8 +2,6 @@ package com.smart.android.smartandroid.loginsdk.task;
 
 import com.smart.android.smartandroid.loginsdk.LoginConstant;
 import com.smart.android.smartandroid.loginsdk.LoginMgr;
-import com.smart.android.smartandroid.protolink.util.ByteConverter;
-import com.smart.android.smartandroid.protolink.util.ProtoUtil;
 import com.smart.android.smartandroid.protolink.worker.ProtoTaskRunnable;
 
 /**
@@ -37,9 +35,6 @@ public class SendTask implements ProtoTaskRunnable {
             return;
         }
 
-        //4字节的Size，4字节的msgId
-        //byte[] data = ProtoUtil.concatAll(ByteConverter.intToBytes(4+mData.length), ByteConverter.intToBytes(mUri), mData);
-        //mLoginMgr.getLink().send(mUri, data, data.length);
         mLoginMgr.getLink().send(mUri, mData, mData.length);
     }
 }

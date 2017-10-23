@@ -11,7 +11,7 @@ import com.smart.android.smartandroid.protolink.worker.ProtoTimerTaskRunnable;
 
 public class LoginCheckDataTask implements ProtoTimerTaskRunnable {
     private LoginLinkListener mLoginListener;
-    private int mInterval = 2*1000;
+    private int mInterval = 30*1000;
 
     public LoginCheckDataTask(LoginLinkListener listener){
         this.mLoginListener = listener;
@@ -34,6 +34,11 @@ public class LoginCheckDataTask implements ProtoTimerTaskRunnable {
 
     @Override
     public int getInterval() {
+        return mInterval;
+    }
+
+    @Override
+    public int getFirstDelay() {
         return mInterval;
     }
 

@@ -5,7 +5,7 @@ import com.smart.android.smartandroid.protolink.worker.ProtoTaskRunnable;
 import com.smart.android.smartandroid.loginsdk.LoginMgr;
 
 /**
- * Created by root on 16/10/4.
+ * Created by liujia on 16/10/4.
  */
 
 public class LoginConnectedTask implements ProtoTaskRunnable {
