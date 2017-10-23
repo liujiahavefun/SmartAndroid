@@ -63,7 +63,7 @@ public class ProtoLinkImpl implements IProtoLink, IProtoLinkHandler, IEventHandl
         }
 
         //add timer
-        //JniManager.GetInstance().ConnAddTimer(mConnId, CONNECT_TIMEOUT_TIMER, 5);
+        JniManager.GetInstance().ConnAddTimer(mConnId, CONNECT_TIMEOUT_TIMER, 5);
 
         return true;
     }

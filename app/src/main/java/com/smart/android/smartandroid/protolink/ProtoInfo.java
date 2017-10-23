@@ -8,13 +8,13 @@ package com.smart.android.smartandroid.protolink;
 public enum ProtoInfo {
     instance;
 
-    private String mUserId;
-    private String mUserToken;
+    private String mUserId = "";
+    private String mUserToken = "";
 
-    private String mPassport;
-    private String mPassword;
+    private String mPassport = "";
+    private String mPassword = "";
 
-    private String mDevId;
+    private String mDevId = "";
 
     private long mClientTimestamp = System.currentTimeMillis();
     private long mServerTimestamp = System.currentTimeMillis();
