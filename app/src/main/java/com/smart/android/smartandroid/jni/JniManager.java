@@ -41,11 +41,19 @@ public class JniManager {
 
     // callback function from JNI
     public static void OnEvent(int connId, int eventId, long val){
-        EventHandlerMgr.onEvent(connId, eventId, val);
+        try {
+            EventHandlerMgr.onEvent(connId, eventId, val);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void OnData(int connId, int uri, byte[] data, int len){
-        EventHandlerMgr.onData(connId, uri, data, len);
+        try {
+            EventHandlerMgr.onData(connId, uri, data, len);
+        }catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public static void OnLog(int level, String msg){
