@@ -10,7 +10,6 @@ import com.smart.android.smartandroid.loginsdk.LoginMgr;
 import com.smart.android.smartandroid.util.LogUtil;
 
 public class MainActivity extends AppCompatActivity implements LoginListener {
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

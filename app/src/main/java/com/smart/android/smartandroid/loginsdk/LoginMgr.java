@@ -1,5 +1,7 @@
 package com.smart.android.smartandroid.loginsdk;
 
+import com.smart.android.smartandroid.loginsdk.loginTask.LoginCheckDataTask;
+import com.smart.android.smartandroid.loginsdk.loginTask.LoginPingTask;
 import com.smart.android.smartandroid.loginsdk.proto.LoginProtoBean;
 import com.smart.android.smartandroid.loginsdk.task.LvsTestTask;
 import com.smart.android.smartandroid.loginsdk.task.ReconnectTask;
@@ -36,6 +38,11 @@ public class LoginMgr implements ProtoHandler{
         mLoginWorker = ProtoWorkerService.createProtoWorker();
         mLoginListener = listener;
         mLoginProtoHandler = new LoginProtoHandler(this);
+        mLoginProtoHandler.addHandler(protocol.PLoginByPassportRes_uri, this);
+        mLoginProtoHandler.addHandler(protocol.PLoginByUidRes_uri, this);
+        mLoginProtoHandler.addHandler(protocol.PLoginLogoutRes_uri, this);
+        mLoginProtoHandler.addHandler(protocol.PLoginLogoutRes_uri, this);
+        mLoginProtoHandler.addHandler(protocol.PLoginKickOff_uri,this);
 
         mLoginWorker.startWorker();
     }
@@ -104,11 +111,11 @@ public class LoginMgr implements ProtoHandler{
         mLvsTesting = testing;
     }
 
-    LoginProtoHandler getProtoHandler() {
+    ProtoHandler getProtoHandler() {
         return mLoginProtoHandler;
     }
 
-    ProtoWorker getWorkder() {
+    ProtoWorker getWorker() {
         return mLoginWorker;
     }
 
@@ -188,6 +195,9 @@ public class LoginMgr implements ProtoHandler{
         sendLoginReq();
     }
 
+    /*
+     * 疑似被踢了
+     */
     public void onDisconnected(){
         //liujia: 这些被踢啊，登出啊，登录失败啊，就不重试了吧。。。
         if (mLoginStatus == LoginConstant.LOGIN_STATUS_KICKOFF ||
@@ -260,7 +270,7 @@ public class LoginMgr implements ProtoHandler{
     * 处理接收的消息
     */
     @Override
-    public void call(int uri, byte[] data) {
+    public void onProto(int uri, byte[] data) {
         switch (uri){
             case protocol.PLoginByPassportRes_uri:
                 onLoginByPassportRes(data);
@@ -302,7 +312,9 @@ public class LoginMgr implements ProtoHandler{
                 ProtoLogger.Log("LoginMgr.onLoginByPassportRes, login failed, code = %d", code);
                 this.setLoginStatus(LoginConstant.LOGIN_STATUS_FAILED);
             }
+
             mLoginListener.onLoginStatusChanged(this.getLoginStatus(), userId, token);
+            this.getWorker().postDelay(new LoginPingTask(this));
 
         }catch (InvalidProtocolBufferException e) {
             ProtoLogger.Log("LoginMgr.onLoginByPassportRes, parse msg failed, %s", e.getLocalizedMessage());
@@ -327,7 +339,9 @@ public class LoginMgr implements ProtoHandler{
                 ProtoLogger.Log("LoginMgr.onLoginByUidRes, login failed, code = %d", code);
                 this.setLoginStatus(LoginConstant.LOGIN_STATUS_FAILED);
             }
+
             mLoginListener.onLoginStatusChanged(this.getLoginStatus(), userId, token);
+            this.getWorker().postDelay(new LoginPingTask(this));
 
         }catch (InvalidProtocolBufferException e) {
             ProtoLogger.Log("LoginMgr.onLoginByUidRes, parse msg failed, %s", e.getLocalizedMessage());

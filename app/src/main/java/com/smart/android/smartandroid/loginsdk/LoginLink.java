@@ -3,7 +3,7 @@ package com.smart.android.smartandroid.loginsdk;
 import com.smart.android.smartandroid.protolink.ProtoLogger;
 
 /**
- * Created by root on 16/10/3.
+ * Created by liujia on 16/10/3.
  */
 
 public class LoginLink {
