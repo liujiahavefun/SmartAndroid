@@ -20,10 +20,10 @@ public class ProtoWorkerTest {
         worker.post(new SampleTaskNormal_2(1));
         worker.post(new SampleTaskNormal_3(1));
 
-        final ProtoTimerTaskRunnable periodicTask = new SampleTaskPeriodic_1(1);
+        final ProtoTimerTaskRunnable periodicTask = new SampleTaskPeriodic_1(worker, 1);
         worker.postDelay(periodicTask);
 
-        worker.postDelay(new SampleTaskPeriodic_2(1));
+        worker.postDelay(new SampleTaskPeriodic_2(worker, 1));
 
         worker.remove(2);
 

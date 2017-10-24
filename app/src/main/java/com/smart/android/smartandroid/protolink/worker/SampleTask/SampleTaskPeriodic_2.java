@@ -1,6 +1,7 @@
 package com.smart.android.smartandroid.protolink.worker.SampleTask;
 
 import com.smart.android.smartandroid.protolink.worker.ProtoTimerTaskRunnable;
+import com.smart.android.smartandroid.protolink.worker.ProtoWorker;
 import com.smart.android.smartandroid.util.LogUtil;
 
 /**
@@ -8,9 +9,11 @@ import com.smart.android.smartandroid.util.LogUtil;
  */
 
 public class SampleTaskPeriodic_2 implements ProtoTimerTaskRunnable {
+    private ProtoWorker mProtoWorker;
     private long mRunFor;
 
-    public SampleTaskPeriodic_2(int runFor){
+    public SampleTaskPeriodic_2(ProtoWorker worker, int runFor){
+        this.mProtoWorker = worker;
         this.mRunFor = runFor * 100;
     }
 
