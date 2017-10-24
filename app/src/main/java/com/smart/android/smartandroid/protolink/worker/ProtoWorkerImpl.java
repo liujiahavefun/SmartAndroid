@@ -2,10 +2,12 @@ package com.smart.android.smartandroid.protolink.worker;
 
 import com.smart.android.smartandroid.protolink.ProtoLogger;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -15,7 +17,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 
 public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
-    private class FutureWrapper implements Comparable<FutureWrapper>{
+    public class FutureWrapper implements Comparable<FutureWrapper>{
         private int taskId;
         private int taskHashCode;
         private Future<?> future;
@@ -47,7 +49,7 @@ public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
     private static final int TASK_DELAY = 2;
     private static final int TASK_PERIODIC = 3;
 
-    private class TaskWrapper implements Runnable {
+    public class TaskWrapper implements Runnable {
         private final ProtoTaskExecutionInterface execution;
         private final ProtoTaskRunnable runnable;
         private final int type;
@@ -64,9 +66,11 @@ public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
                 ProtoLogger.Log("***********before run " + runnable.getTaskName());
                 this.execution.beforeExecute(runnable, type);
                 runnable.run();
-            }finally {
-                this.execution.afterExecute(runnable, type);
+            }catch (Exception e) {
+                e.printStackTrace();
+            } finally{
                 ProtoLogger.Log("***********after run " + runnable.getTaskName());
+                this.execution.afterExecute(runnable, type);
             }
         }
     }
@@ -167,7 +171,7 @@ public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
             return 0;
         }
 
-        Queue<FutureWrapper> foundItems = new LinkedBlockingDeque<>();
+        Queue<FutureWrapper> foundItems = new LinkedList<>();
         for (FutureWrapper f : mFutureQueue) {
             if (f.getId() == taskId) {
                 f.cancel(false);
@@ -184,7 +188,7 @@ public class ProtoWorkerImpl implements ProtoTaskExecutionInterface{
             return 0;
         }
 
-        Queue<FutureWrapper> foundItems = new LinkedBlockingDeque<>();
+        List<FutureWrapper> foundItems = new ArrayList<>();
         for (FutureWrapper f : mTimerFutureQueue) {
             if (f.getId() == taskId) {
                 f.cancel(false);

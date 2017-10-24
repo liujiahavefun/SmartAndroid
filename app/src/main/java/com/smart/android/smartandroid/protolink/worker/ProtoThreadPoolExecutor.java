@@ -6,10 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.RunnableScheduledFuture;
-import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
 
@@ -51,32 +48,32 @@ public class ProtoThreadPoolExecutor extends ScheduledThreadPoolExecutor {
     */
     @Override
     protected void beforeExecute(Thread t, Runnable r) {
-        ProtoLogger.Log("ProtoThreadPoolExecutor: A task is beginning: %s : %s", t.getName(), r.hashCode());
+        super.beforeExecute(t, r);
+
+        ProtoLogger.Log("ProtoThreadPoolExecutor: A task is beginning: %d", r.hashCode());
         mStartTimes.put(String.valueOf(r.hashCode()), new Date());
     }
 
     @Override
     protected void afterExecute(Runnable r, Throwable t) {
-        Future<?> result = (Future<?>)r;
-        try {
-            ProtoLogger.Log("*********************************");
-            ProtoLogger.Log("ProtoThreadPoolExecutor: A task is finishing.");
-            ProtoLogger.Log("ProtoThreadPoolExecutor: Result: %s", result.get());
+        super.afterExecute(r, t);
 
-            Date startDate = mStartTimes.remove(String.valueOf(r.hashCode()));
-            Date finishDate = new Date();
-            long diff = finishDate.getTime()-startDate.getTime();
+        //ProtoLogger.Log("*********************************");
+        //ProtoLogger.Log("ProtoThreadPoolExecutor: A task is finishing.");
+        //ProtoLogger.Log("ProtoThreadPoolExecutor: Result: %s", result.get());
 
-            ProtoLogger.Log("ProtoThreadPoolExecutor: Execution Duration: %d", diff);
-            ProtoLogger.Log("*********************************");
+        //liujia: 注意，下面这两行注掉的，会导致worker被阻塞，因为这个future永远不会返回值
+        //Future<?> result = (Future<?>)r;
+        //result.get();
 
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        } catch (Exception e) {
-            e.printStackTrace();
+        Date startDate = mStartTimes.remove(String.valueOf(r.hashCode()));
+        if(startDate != null) {
+            ProtoLogger.Log("ProtoThreadPoolExecutor: A task finished: %d, Execution Duration: %d", r.hashCode(), (new Date()).getTime()-startDate.getTime());
+        }else {
+            ProtoLogger.Log("ProtoThreadPoolExecutor: A task finished: %d", r.hashCode());
         }
+
+        //ProtoLogger.Log("*********************************");
     }
 
     @Override
